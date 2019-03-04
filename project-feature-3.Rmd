@@ -1,0 +1,94 @@
+---
+title: "PROJECT"
+author: "Jerry Tohvan, Ang Kah Eng, Terence Tan, Jerry Tohvan"
+date: "3/3/2019"
+output: 
+  html_notebook:
+    number_section: yes
+    theme: flatly
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+Setup R notebook Environment
+```{r setup, include=TRUE, eval=TRUE,message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setlocale("LC_CTYPE", "chinese")
+```
+
+#Package load for Project
+```{r}
+packages = c("sp","sf","tidyverse","tmap","jsonlite", "rgdal", "geojsonio", "GISTools") 
+for (p in packages){
+  if(!require(p, character.only = T)){
+    install.packages(p) 
+  } 
+  library(p,character.only = T) 
+}
+```
+
+#Importing Taiwan GDAM Subzone Level 2 Adminstration level
+Input: Shapefile Object with Spatial dataframe
+[Requires translation of chinese character independetly](https://stat.ethz.ch/pipermail/r-sig-geo/2009-March/005323.html)
+Taiwan follows EPSG [3826](http://spatialreference.org/ref/epsg/twd97-tm2-zone-121/)
+```{r}
+taiwan_ts_map_sf <- st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226")
+taiwan_ts_map_st <- st_transform(taiwan_ts_map_sf,crs=3826)
+```
+
+##Visualise interactive Taiwan Map
+```{r}
+tmap_mode("view")
+tm_shape(taiwan_ts_map_st)+
+    tm_fill(col="TOWNNAME")+
+  tm_borders(col = "grey40",alpha=0.5)
+```
+
+## Importing Dengue Case data
+```{r}
+library(rjson)
+df_dengue <- jsonlite::fromJSON("data/dengue_case.json")
+str(df_dengue)
+```
+
+```{r}
+# Check for NA values for coordinates
+sum(is.na(df_dengue$Minimum_statistical_area_center_point_X))
+sum(is.na(df_dengue$Minimum_statistical_area_center_point_Y))
+df_dengue<- df_dengue[!is.na(df_dengue$Minimum_statistical_area_center_point_X),]
+df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'None'),]
+```
+
+```{r}
+#transform(df_dengue, Minimum_statistical_area_center_point_X = as.numeric(Minimum_statistical_area_center_point_X))
+
+df_dengue[, c(10,11,19,23,24)] <- sapply(df_dengue[, c(10,11,19,23,24)], as.numeric)
+```
+
+```{r}
+str(df_dengue)
+```
+
+```{r}
+sf_dengue <- st_as_sf(df_dengue, 
+                      coords = c("Minimum_statistical_area_center_point_X",
+                                 "Minimum_statistical_area_center_point_Y"),
+                      crs = 3826)
+str(sf_dengue)
+```
+
+```{r}
+tmap_mode("view")
+tm_shape(sf_dengue)+
+tm_bubbles(col = "red",
+           size = 0.1,
+           border.col = "black",
+           border.lwd = 1) +
+tm_shape(taiwan_ts_map_st)+
+    tm_fill(col="TOWNNAME")
+```
+
