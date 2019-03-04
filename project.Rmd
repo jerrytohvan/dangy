@@ -1,6 +1,6 @@
 ---
 title: "PROJECT"
-author: "Jerry Tohvan, "
+author: "Jerry Tohvan, Ang Kah Eng, Terence Tan, Jerry Tohvan"
 date: "1/14/2019"
 output: 
   html_notebook:
@@ -22,7 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #Package load for Project
 ```{r}
-packages = c('sp','sf','tidyverse',"tmap","rjson", "rgdal", "geojsonio", "GISTools") 
+packages = c("sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools") 
 for (p in packages){
   if(!require(p, character.only = T)){
     install.packages(p) 
@@ -39,16 +39,12 @@ Requires translation of chinese character independetly (https://stat.ethz.ch/pip
 
 Taiwan follows EPSG 3826 (http://spatialreference.org/ref/epsg/twd97-tm2-zone-121/)
 ```{r}
+
 taiwan_map_sf <- st_read(dsn = "data/GADM_SUBZONE", layer = "gadm36_TWN_2" , stringsAsFactors=FALSE)
 taiwan_map_st <- st_transform(taiwan_map_sf,crs=3826)
+name_dict <- read_csv("data/clean_data/my_name_dict.csv")
 
-name_dict = read_tsv("data/clean_data/my_name_dict.csv")
-
-a_c_g_y_Dengue = read_csv("data/clean_data/Age_County_Gender_Year_Dengue_Case_chinese.csv")
-
-#result <- fromJSON(file = "Hospital_Geometry_City_clean.json")
-# Convert JSON file to a data frame.
-#json_data_frame <- as.data.frame(result)
+a_c_g_y_Dengue <- read_csv("data/clean_data/Age_County_Gender_Year_Dengue_Case_chinese.csv")
 
 ```
 Map name dict to map
@@ -87,7 +83,6 @@ write.csv(sel, file=con)
 ```
 
 ## Visualise Hospitals With Dengue NS1 Rapid Test
-
 ```{r}
 datafile <- "data/clean_data/Hospitals With Dengue NS1 Rapid Test.geojson"
 hospital_sp <- geojson_read(datafile, method = "local", what="sp")
