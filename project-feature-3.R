@@ -15,27 +15,44 @@ for (p in packages){
   } 
   library(p,character.only = T) 
 }
+Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
    # Application title
    titlePanel("Dengue Case Visualisation"),
-   
+   navlistPanel(
+     "Header",
+     tabPanel("Exploratory Data Analysis",
+              
+              h3("Dengue Spatial Points Map"),
+              sidebarPanel(
+                sliderInput("yearSlider",
+                                        "Year:",
+                                        min = 1998,
+                                        max = 2018,
+                                        value = 1998)
+                ),
+              leafletOutput("mapPlot", height= 900),
+              leafletOutput("dataPoints")
+     ),
+     tabPanel("Further Analysis",
+              h3("This is the second panel")
+     ),
+     tabPanel("Data Table",
+              h3("This is the third panel")
+     )
+   ),
    # Sidebar with a slider input for number of years
    sidebarLayout(
       sidebarPanel(
-         sliderInput("yearSlider",
-                     "Year:",
-                     min = 1998,
-                     max = 2018,
-                     value = 1998)
+        
       ),
       
       # Show a plot of the generated distribution
       mainPanel(
-         leafletOutput("mapPlot", height= 900),
-         leafletOutput("dataPoints")
+   
       )
    )
 )
