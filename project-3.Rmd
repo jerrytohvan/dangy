@@ -40,11 +40,8 @@ Requires translation of chinese character independetly (https://stat.ethz.ch/pip
 Taiwan follows EPSG 3826 (http://spatialreference.org/ref/epsg/twd97-tm2-zone-121/)
 ```{r}
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226")
-#taiwan_ts_map_st <- st_transform(taiwan_ts_map_sf,crs=3826)
-
 df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>% 
   filter(as.Date(Onset_day) >= "2016-01-01" & as.Date(Onset_day)< "2017-01-01")
-#df_filtered <- df_dengue %>% filter(grepl(filter_year, Onset_day))
 
 # Check for NA values for coordinates
  sum(is.na(df_dengue$Minimum_statistical_area_center_point_X))
@@ -59,18 +56,16 @@ df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>%
  sf_dengue <- st_as_sf(df_dengue, 
                        coords = c("Minimum_statistical_area_center_point_X",
                                   "Minimum_statistical_area_center_point_Y"),
-                        crs = "+init=epsg:3826 +proj=tmerc +ellps=GRS80 +no_defs",na.fail=FALSE)
+                        crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs",na.fail=FALSE)
+sf_dengue <- na.omit(sf_dengue)
+sf_dengue <- as(sf_dengue, 'Spatial')
 ```
 
 Map name dict to map
 ```{r}
-#taiwan_ts_map_sf <-as(taiwan_ts_map_sf, 'Spatial')
-proj4string(taiwan_ts_map_sp) <- CRS("+init=epsg:3826 +proj=tmerc +ellps=GRS80 +no_defs")
-sf_dengue <- na.omit(sf_dengue)
-transaction.boundary.poly <- point.in.poly(as(sf_dengue, 'Spatial'), taiwan_ts_map_sp)
 
-plot(taiwan_ts_map_sp, border="lightgrey")
-plot(transaction.boundary.poly, col="red",add=TRUE)
+#plot(taiwan_ts_map_sp, border="lightgrey")
+#plot(transaction.boundary.poly, col="red",add=TRUE)
 
 tmap_mode("plot")
 map <- tm_shape(taiwan_ts_map_sp)+
@@ -80,11 +75,12 @@ map <- tm_shape(taiwan_ts_map_sp)+
   tm_layout(basemaps = c('OpenStreetMap'))+
   tm_shape(sf_dengue)+
   tm_bubbles(col ="red",size = 0.1)
+
+map 
 ```
 
 
 ```{r}
-map 
 tmap_mode("view")
 map 
 
