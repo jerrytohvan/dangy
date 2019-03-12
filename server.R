@@ -1,64 +1,5 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
-library(shiny)
-packages = c("sp","sf","tidyverse","tmap","jsonlite", "rgdal", "leaflet") 
-for (p in packages){
-  if(!require(p, character.only = T)){
-    install.packages(p) 
-  } 
-  library(p,character.only = T) 
-}
-Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
-
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Dengue Case Visualisation"),
-   navlistPanel(
-     "Header",
-     tabPanel("Exploratory Data Analysis",
-              
-              h3("Dengue Spatial Points Map"),
-              sidebarPanel(
-                sliderInput("yearSlider",
-                                        "Year:",
-                                        min = 1998,
-                                        max = 2018,
-                                        value = 1998)
-                ),
-              leafletOutput("mapPlot", height= 900),
-              leafletOutput("dataPoints")
-     ),
-     tabPanel("Further Analysis",
-              h3("This is the second panel")
-     ),
-     tabPanel("Data Table",
-              h3("This is the third panel")
-     )
-   ),
-   # Sidebar with a slider input for number of years
-   sidebarLayout(
-      sidebarPanel(
-        
-      ),
-      
-      # Show a plot of the generated distribution
-      mainPanel(
-   
-      )
-   )
-)
-
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+function(input, output) {
    
    output$distPlot <- renderPlot({
       # generate bins based on input$bins from ui.R
@@ -70,8 +11,7 @@ server <- function(input, output) {
    })
    
    output$mapPlot <- renderLeaflet({
-     taiwan_ts_map_sf <- st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226")
-     taiwan_ts_map_st <- st_transform(taiwan_ts_map_sf,crs=3826)
+    
      tmap_mode("plot")
      map <- tm_shape(taiwan_ts_map_st)+
        tm_fill(col="TOWNNAME")+
@@ -116,7 +56,4 @@ server <- function(input, output) {
    })
    
 }
-
-# Run the application 
-shinyApp(ui = ui, server = server)
 
