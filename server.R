@@ -20,8 +20,6 @@ function(input, output) {
   })
   
   output$dataPoints <- renderLeaflet({
-    # df_dengue <- jsonlite::fromJSON("data/dengue_case.json")
-    
     filter_year <- input$yearSlider 
     
     # Filter by year 1998
@@ -49,6 +47,7 @@ function(input, output) {
   
   # ===========  Feature 5 & 6 - Data Table View  =============
   
+
   # Filter data based on selections
   output$district_cases_table <- DT::renderDataTable(DT::datatable({
     data <- selected_aggregated_temp

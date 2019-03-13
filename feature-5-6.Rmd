@@ -39,7 +39,7 @@ Requires translation of chinese character independetly (https://stat.ethz.ch/pip
 
 Taiwan follows EPSG 3826 (http://spatialreference.org/ref/epsg/twd97-tm2-zone-121/)
 ```{r}
-taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226")
+taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
 df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>% 
   filter(as.Date(Onset_day) >= "2016-01-01" & as.Date(Onset_day)< "2017-01-01")
 
@@ -89,21 +89,23 @@ map <- tm_shape(taiwan_ts_map_sp)+
 #FEATURE 5 & 6
 ```{r}
 projection(taiwan_ts_map_sp) <- sf_dengue@proj4string
-taiwan_ts_map_sp@data$id <- 1:nrow(taiwan_ts_map_sp)
+taiwan_ts_map_sp@data$poly.ids <- 1:nrow(taiwan_ts_map_sp)
 
 #join poly and points
 pts.poly <- point.in.poly(sf_dengue, taiwan_ts_map_sp)
-
 #assign unique id per poly, full info
-
-
+```
+```{r}
 #descendng order of town with most
-#FILTER: Months, Gender
-#DISPLAY: COUNTY, GENDER, TOWNID, TOWNNAME, TOWNENG, total_cases, ....
-selected_aggregated_temp <-pts.poly@data %>% dplyr::select(id,TOWNID,TOWNNAME, TOWNENG, Onset_day, Case_study_date, Notification_day) %>% 
+selected_aggregated_temp <-pts.poly@data %>% 
+  dplyr::select(poly.ids, TOWNNAME, TOWNENG, Onset_day, Case_study_date, Notification_day) %>% 
   mutate(MONTH = months(as.Date(pts.poly@data$Onset_day))) %>%
-  group_by(id,TOWNID, TOWNENG,MONTH) %>% summarise(total_cases = n())
-selected_aggregated <- left_join(selected_aggregated_temp, taiwan_ts_map_sp@data, by=c("TOWNID"))
+  group_by(poly.ids,TOWNNAME, TOWNENG,MONTH) %>% 
+  summarise(total_cases = n())
+
+
+
+#selected_aggregated <- left_join(selected_aggregated_temp, taiwan_ts_map_sp@data, by=c("poly.ids"))
 
 selected_aggregated_temp
 
