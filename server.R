@@ -20,16 +20,7 @@ function(input, output) {
   })
   
   output$dataPoints <- renderLeaflet({
-    df_dengue <- jsonlite::fromJSON("data/dengue_case.json")
-    
-    # Check for NA values for coordinates
-    sum(is.na(df_dengue$Minimum_statistical_area_center_point_X))
-    sum(is.na(df_dengue$Minimum_statistical_area_center_point_Y))
-    df_dengue<- df_dengue[!is.na(df_dengue$Minimum_statistical_area_center_point_X),]
-    df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'None'),]
-    
-    # Type conversion
-    df_dengue[, c(10,11,19,23,24)] <- sapply(df_dengue[, c(10,11,19,23,24)], as.numeric)
+    # df_dengue <- jsonlite::fromJSON("data/dengue_case.json")
     
     filter_year <- input$yearSlider 
     
@@ -46,18 +37,38 @@ function(input, output) {
     sf_dengue <- na.omit(sf_dengue)
     sf_dengue <- as(sf_dengue, 'Spatial')
     
-    
     map_dengue <- 
       tm_basemap(leaflet::providers$OpenStreetMap)+
       tm_shape(sf_dengue)+
       tm_dots(col = "red",
                  border.col = "black",
                  border.lwd = 1) 
-    #tm_shape(taiwan_ts_map_st)+
-    #tm_fill(col="TOWNNAME")
     tmap_leaflet(map_dengue)
     
   })
+  
+  # ===========  Feature 5 & 6 - Data Table View  =============
+  
+  # Filter data based on selections
+  output$district_cases_table <- DT::renderDataTable(DT::datatable({
+    data <- selected_aggregated_temp
+    if (input$months != "All") {
+      data <- data[data$MONTH == input$months,]
+    }
+    data
+  }))
+ 
+    output$infected_countries <- DT::renderDataTable(DT::datatable({
+    data <- infected_countries_aggregate
+    if (input$local != "Both") {
+      if (input$local == "Taiwan Local") {
+        data <- data[data$Infected_country == "Republic of China",]
+      }else{
+        data <- data[data$Infected_country != "Republic of China",]
+      }
+    }
+    data
+  }))
    
 }
 

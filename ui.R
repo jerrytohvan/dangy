@@ -30,23 +30,37 @@ navbarPage("Dangy", id="nav",
            ),
            
            tabPanel("Exploratory Data Analysis",
-              # Sidebar with a slider input for number of years
-              sidebarLayout(
-                  position = "right",
-                  sidebarPanel(
-                    width = 3,
-                    sliderInput("yearSlider",
-                                "Year:",
-                                min = 1998,
-                                max = 2018,
-                                value = 1998)
-                  ),
-                
-                # Show a plot of the generated distribution
-                mainPanel(
-                  leafletOutput("dataPoints")
-                )
-              )
+              id="nav",
+               div(class="outer",
+                   
+                   tags$head(
+                     # Include our custom CSS
+                     includeCSS("style.css"),
+                     includeScript("gomap.js")
+                   ),
+                   
+                   # If not using custom CSS, set height of leafletOutput to a number instead of percent
+                   leafletOutput("dataPoints", width="100%", height="100%"),
+                   
+                   # Shiny versions prior to 0.11 should use class = "modal" instead.
+                   absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                                 draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
+                                 width = 330, height = "auto",
+
+                                 h2("Year"),
+                                 sliderInput("yearSlider",
+                                                       "Year:",
+                                                       min = 1998,
+                                                       max = 2018,
+                                                       value = 1998)
+                               
+                   ),
+                   
+                   tags$div(id="cite",
+                            'Data retrieved from ', tags$em('Dengue Daily Confirmed Cases Since 1998 '), ' by Taiwan\'s CDC Government.'
+                   )
+               )
+              
            ),
            
            tabPanel("Further Analysis",
@@ -78,19 +92,33 @@ navbarPage("Dangy", id="nav",
            ),
            
            tabPanel("Data Table",
-              
-              sidebarLayout(
-                sidebarPanel(
-                  
-                ),
-                
-                # Show a plot of the generated distribution
-                mainPanel(
-                  
-                )
-              )
+                    fluidPage(
+                      titlePanel("Total Cases in Level 3 District"),
+                      
+                      # Create a new Row in the UI for selectInputs
+                      fluidRow(
+                        column(4,
+                               selectInput("months",
+                                           "Month(s):",
+                                           c("All","January", "Febuary","March","April","May","June","July","August","September","November","December"))
+                        )
+                      ),
+                      # Create a new row for the table.
+                      DT::dataTableOutput("district_cases_table"),
+                      titlePanel("Total Affected Countries/Cities"),
+                      
+                      # Create a new Row in the UI for selectInputs
+                      fluidRow(
+                        column(4,
+                               selectInput("local",
+                                           "Localisation Analysis Type:",
+                                           c("Both","Taiwan Local", "International"))
+                        )
+                      ),
+                      # Create a new row for the table.
+                      DT::dataTableOutput("infected_countries")
            )
            
-           
+           )  
 )
 

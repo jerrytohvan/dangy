@@ -76,7 +76,7 @@ map <- tm_shape(taiwan_ts_map_sp)+
   tm_shape(sf_dengue)+
   tm_bubbles(col ="red",size = 0.1)
 
-map 
+#map 
 ```
 
 
@@ -89,26 +89,34 @@ map
 #FEATURE 5 & 6
 ```{r}
 projection(taiwan_ts_map_sp) <- sf_dengue@proj4string
-st_crs(sf_dengue)
-st_crs(taiwan_ts_map_sp)
+taiwan_ts_map_sp@data$id <- 1:nrow(taiwan_ts_map_sp)
+
 #join poly and points
 pts.poly <- point.in.poly(sf_dengue, taiwan_ts_map_sp)
 
 #assign unique id per poly, full info
-taiwan_ts_map_sp@data$poly.ids <- 1:nrow(taiwan_ts_map_sp)
+
 
 #descendng order of town with most
 #FILTER: Months, Gender
-#DISPLAY: COUNTY, TOWNID, TOWNNAME, TOWNENG, total_cases, ....
-selected_aggregated_temp <-pts.poly@data %>% dplyr::select(poly.ids, TOWNID,TOWNNAME, TOWNENG, Onset_day, Case_study_date, Notification_day) %>% 
+#DISPLAY: COUNTY, GENDER, TOWNID, TOWNNAME, TOWNENG, total_cases, ....
+selected_aggregated_temp <-pts.poly@data %>% dplyr::select(id,TOWNID,TOWNNAME, TOWNENG, Onset_day, Case_study_date, Notification_day) %>% 
   mutate(MONTH = months(as.Date(pts.poly@data$Onset_day))) %>%
-  group_by(poly.ids,TOWNID,TOWNENG,MONTH) %>% summarise(total_cases = n())
-selected_aggregated <- left_join(selected_aggregated_temp, taiwan_ts_map_sp@data, by=c("poly.ids"))
-#https://shiny.rstudio.com/gallery/basic-datatable.html -> FILTERS
+  group_by(id,TOWNID, TOWNENG,MONTH) %>% summarise(total_cases = n())
+selected_aggregated <- left_join(selected_aggregated_temp, taiwan_ts_map_sp@data, by=c("TOWNID"))
 
-#info on the most post infected countries
+selected_aggregated_temp
 
 ```
+```{r}
+#Infected countries & village
+infected_countries_aggregate <-pts.poly@data %>% 
+  dplyr::select(Onset_day, Infected_country, Infected_counties_and_cities, Infected_village)%>% 
+  mutate(MONTH = months(as.Date(pts.poly@data$Onset_day))) %>%
+  group_by( MONTH, Infected_country, Infected_counties_and_cities, Infected_village) %>% summarise(total_cases = n())
+infected_countries_aggregate
+```
+
 
 
 
