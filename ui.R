@@ -45,16 +45,23 @@ navbarPage("Dangy", id="nav",
                    # Shiny versions prior to 0.11 should use class = "modal" instead.
                    absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                                  draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
-                                 width = 330, height = "auto",
+                                 width = 450, height = "auto",
 
-                                 h2("Year"),
+                                 h2("Filters"),
                                  sliderInput("yearSlider",
-                                                       "Year:",
-                                                       min = 1998,
-                                                       max = 2018,
-                                                       value = 1998)
+                                             "Year:",
+                                             min = 1998,
+                                             max = 2018,
+                                             value = 1998),
+                                 selectInput("filters", "Attributes:", selected = "age_group",
+                                             c("Age" = "age_group",
+                                               "Gender" = "gender",
+                                               "Subzone" = "Living_county")),
+                                 plotlyOutput(outputId = "barplot", height = 350)
                                
                    ),
+                   
+                   
                    
                    tags$div(id="cite",
                             'Data retrieved from ', tags$em('Dengue Daily Confirmed Cases Since 1998 '), ' by Taiwan\'s CDC Government.'

@@ -1,4 +1,4 @@
-packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools") 
+packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly") 
 
 for (p in packages){
   if(!require(p, character.only = T)){

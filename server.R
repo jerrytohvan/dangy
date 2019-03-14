@@ -45,6 +45,53 @@ function(input, output) {
     
   })
   
+  # ===========  Feature 3 - Distribution Plot  =============
+  
+  output$barplot <- renderPlotly({
+    filter_year <- input$yearSlider 
+    
+    # Filter by year 1998
+    df_filtered <- df_dengue %>%
+      filter(grepl(filter_year, Onset_day))
+    
+    
+    # Rearrange the x axis for age-group
+    if (input$filters == "age_group") {
+      agg_age <- df_filtered %>% 
+        dplyr::mutate(age_group = factor(age_group, 
+                                         levels = c("0", "1", "2", "3", "5-9", "10-14", "15-19", "20-24","25-29",
+                                                    "30-34", "35-39", "40-44", "45-49", "50-54", "55-59",
+                                                    "60-64","65-69", "70+"))) %>%
+        group_by(age_group) %>%
+        summarise(total_cases = n())
+      
+      ggplot(agg_age, aes(y = total_cases, x = age_group)) +
+        geom_bar(stat= "identity", fill = "#0073C2FF") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        labs(y = "Number of cases", x = "Age Group")
+    } else if (input$filters == "gender") {
+      agg_gender <- df_filtered %>%
+        group_by(gender, Living_county) %>%
+        summarise(total_cases = n())
+      
+      ggplot(agg_gender, aes(x = Living_county, y = total_cases, fill=gender)) +
+        geom_bar(stat="identity") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = "none") +
+        labs(y = "Number of cases", x = "Gender")
+    } else {
+      agg_county <- df_filtered %>%
+        group_by(Living_county) %>%
+        summarise(total_cases = n())
+      
+      ggplot(agg_county, aes(x = Living_county, y = total_cases)) +
+        geom_bar(stat="identity", fill="#0073C2FF") +
+        #geom_text(size = 3, stat = 'count',aes(label =..count.., vjust = -0.4)) +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        labs(y = "Number of cases", x = "County")
+      
+    }
+  })
+  
   # ===========  Feature 5 & 6 - Data Table View  =============
   
 
