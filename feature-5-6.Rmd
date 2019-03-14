@@ -51,6 +51,10 @@ df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>%
  
  # Type conversion
  df_dengue[, c(10,11,19,23,24)] <- sapply(df_dengue[, c(10,11,19,23,24)], as.numeric)
+ # Date conversion
+ df_dengue[, "Onset_day"] <- as.Date(df_dengue$Onset_day, "%Y/%m/%d")
+ df_dengue[, "Case_study_date"] <- as.Date(df_dengue$Case_study_date, "%Y/%m/%d")
+ df_dengue[, "Notification_day"] <- as.Date(df_dengue$Notification_day, "%Y/%m/%d")
  
   # Transform into SF object
  sf_dengue <- st_as_sf(df_dengue, 

@@ -91,7 +91,32 @@ function(input, output) {
       
     }
   })
-  
+  # ===========  Feature 5 - Cases over Time Plot  =============
+  output$timeplot <- renderPlotly({
+    filter_year <- input$yearSlider 
+    
+    # Filter by year 1998
+    df_filtered <- df_dengue %>%
+      filter(grepl(filter_year, Onset_day))
+    
+    agg_date <- df_filtered %>%
+      group_by(Onset_day) %>%
+      summarise(total_cases = n())
+    
+    ggplot(data = agg_date) +
+      geom_line(aes(x = Onset_day, y = total_cases), 
+                color = "#09557f",
+                alpha = 0.6,
+                size = 0.6) +
+      labs(x = "Date", 
+           y = "Cases",
+           title = "Case Count over Months") +
+      scale_x_date(
+        labels = date_format("%Y-%m"),
+        breaks = "1 month") +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  })
   # ===========  Feature 5 & 6 - Data Table View  =============
   
 

@@ -1,4 +1,4 @@
-packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly") 
+packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales") 
 
 for (p in packages){
   if(!require(p, character.only = T)){
@@ -27,7 +27,10 @@ df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'No
 
 # Type conversion
 df_dengue[, c(10,11,19,23,24)] <- sapply(df_dengue[, c(10,11,19,23,24)], as.numeric)
-
+# Date conversion
+df_dengue[, "Onset_day"] <- as.Date(df_dengue$Onset_day, "%Y/%m/%d")
+df_dengue[, "Case_study_date"] <- as.Date(df_dengue$Case_study_date, "%Y/%m/%d")
+df_dengue[, "Notification_day"] <- as.Date(df_dengue$Notification_day, "%Y/%m/%d")
 
 
 # Transform into SF object
