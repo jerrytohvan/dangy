@@ -22,7 +22,7 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
 #Package load for Project
 ```{r}
-packages = c("devtools","stpp","sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr","spdep") 
+packages = c("lubridate","stpp","sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr","spdep") 
 for (p in packages){
   if(!require(p, character.only = T)){
       install.packages(p) 
@@ -39,6 +39,7 @@ Requires translation of chinese character independetly (https://stat.ethz.ch/pip
 
 Taiwan follows EPSG 3826 (http://spatialreference.org/ref/epsg/twd97-tm2-zone-121/)
 ```{r}
+taiwan_0_map <- readOGR(dsn = "data/GADM_SUBZONE", layer = "gadm36_TWN_0")
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
 df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>% 
   filter(as.Date(Onset_day) >= "2016-01-01" & as.Date(Onset_day)< "2017-01-01")
@@ -97,6 +98,61 @@ pts.poly <- point.in.poly(sf_dengue, taiwan_ts_map_sp)
 ```
 
 
+#STPP
+https://www.youtube.com/watch?v=V3BWJLg0L5w
+https://rpubs.com/frajaroco/333456
+package: lubridate
+```{r}
+data("fmd")
+data("northcumbria") 
 
+filter_dengue_time <- sf_dengue@data %>%
+  mutate(DAY_ORDER = yday(as.Date(Onset_day)))
+dengue_3d <- as.3dpoints(sf_dengue@coords[,1],sf_dengue@coords[,2],filter_dengue_time$DAY_ORDER)
+
+#taiwan <- gUnaryUnion(taiwan_ts_map_sp)
+#taiwan <- taiwan_ts_map_sp@polygons[[2]]@Polygons[[1]]@coords
+projection(taiwan_0_map) <-  sf_dengue@proj4string
+sf_dengue@proj4string
+taiwan <- gUnaryUnion(taiwan_0_map)
+long_and_lat <- taiwan_0_map %>% fortify() 
+long_and_lat <- data.matrix(long_and_lat[1:2])
+dengue_3d <- data.matrix(dengue_3d)
+colnames(long_and_lat) <- c("x", "y")
+data(long_and_lat)
+# long_and_lat<- gUnaryUnion(long_and_lat)
+
+```
+
+Static two-panel plot of data from the 2016 Dengue case in the county of Taiwan,
+```{r}
+plot(dengue_3d, s.region =long_and_lat)
+```
+
+
+
+An alternative static display in which the time is treated as a quantitative mark attached to each location, and the locations are plotted with the size and/or color of the plotting symbol determined by the value of the mark. 
+```{r}
+plot(dengue_3d, s.region = long_and_lat, pch = 19, mark = TRUE)
+```
+
+Animation of a space-time point pattern. The approximate running time of the animation (in seconds) is set through the runtime parameter, although the animation may actually run more slowly than this, depending on the size of the data-set and the hardware con???guration. If runtime = NULL, the animation is displayed as quickly as the data-set and hardware con???guration allow. 
+```{r}
+animation(dengue_3d,  s.region = long_and_lat,  t.region=dengue_3d[,3],runtime=1, incident="red",  prevalent="pink3", pch=19, cex=0.5, plot.s.region=TRUE, scales=TRUE, border.frac=0.05, add=FALSE)
+```
+
+Slicing using time and width parameter using the rpanel and rgl package
+```{r}
+#stan(dengue_3d, bgpoly =long_and_lat, bgframe = FALSE)
+```
+
+# Analyzing space-time point process data
+
+the space-time inhomogeneous pair correlation function and K-function can be used as measure of spatio-temporal clustering/regularity and as measure of spatio-temporal interaction (Gabriel and Diggle 2009; Møller and Ghorbani
+2012).
+
+##Space-time inhomogeneous K-function (STIK)
+For a second-order intensity reweighted stationary, isotropic spatio-temporal point process,
+the space-time inhomogeneous K-function (STIK-function). STIK function characterizes the second-order properties of a second-order intensity reweighted stationary spatio-temporal point process, and can be used as a measure of spatiotemporal aggregation or regularity
 
 
