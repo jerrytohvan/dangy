@@ -22,7 +22,7 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
 #Package load for Project
 ```{r}
-packages = c("lubridate","stpp","sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr","spdep") 
+packages = c("lubridate","stpp","sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr","spdep","rpanel","rgl") 
 for (p in packages){
   if(!require(p, character.only = T)){
       install.packages(p) 
@@ -41,6 +41,11 @@ Taiwan follows EPSG 3826 (http://spatialreference.org/ref/epsg/twd97-tm2-zone-12
 ```{r}
 taiwan_0_map <- readOGR(dsn = "data/GADM_SUBZONE", layer = "gadm36_TWN_0")
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
+
+tw_st <- st_read(dsn = "data/GADM_SUBZONE", layer = "gadm36_TWN_0")
+tw_sp <- st_transform(tw_st$geometry, "+init=epsg:3826  +proj=longlat +datum=WGS84 +no_defs")
+
+
 df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>% 
   filter(as.Date(Onset_day) >= "2016-01-01" & as.Date(Onset_day)< "2017-01-01")
 
@@ -65,8 +70,6 @@ sf_dengue <- as(sf_dengue, 'Spatial')
 Map name dict to map
 ```{r}
 
-#plot(taiwan_ts_map_sp, border="lightgrey")
-#plot(transaction.boundary.poly, col="red",add=TRUE)
 
 tmap_mode("plot")
 map <- tm_shape(taiwan_ts_map_sp)+
@@ -77,14 +80,7 @@ map <- tm_shape(taiwan_ts_map_sp)+
   tm_shape(sf_dengue)+
   tm_bubbles(col ="red",size = 0.1)
 
-#map 
-```
-
-
-```{r}
-#tmap_mode("view")
-#map 
-
+map 
 ```
 
 
@@ -103,48 +99,64 @@ https://www.youtube.com/watch?v=V3BWJLg0L5w
 https://rpubs.com/frajaroco/333456
 package: lubridate
 ```{r}
-data("fmd")
-data("northcumbria") 
+
 
 filter_dengue_time <- sf_dengue@data %>%
   mutate(DAY_ORDER = yday(as.Date(Onset_day)))
 dengue_3d <- as.3dpoints(sf_dengue@coords[,1],sf_dengue@coords[,2],filter_dengue_time$DAY_ORDER)
 
-#taiwan <- gUnaryUnion(taiwan_ts_map_sp)
-#taiwan <- taiwan_ts_map_sp@polygons[[2]]@Polygons[[1]]@coords
+taiwan <- gUnaryUnion(taiwan_ts_map_sp)
+taiwan <- as(taiwan,"owin")
+# taiwan <- taiwan_0_map@polygons[[1]]@Polygons[[1]]@coords
+
+temp<-data.frame(poly=NULL)
+for( i in 1: length(taiwan_0_map@polygons[[1]]@Polygons)){ temp<-rbind(temp,poly=taiwan_0_map@polygons[[1]]@Polygons[[i]]@coords)}
+temp <- unique(temp)
+
 projection(taiwan_0_map) <-  sf_dengue@proj4string
 sf_dengue@proj4string
 taiwan <- gUnaryUnion(taiwan_0_map)
-long_and_lat <- taiwan_0_map %>% fortify() 
-long_and_lat <- data.matrix(long_and_lat[1:2])
-dengue_3d <- data.matrix(dengue_3d)
+long_and_lat <- taiwan_0_map %>% fortify()
+long_and_lat <- data.frame(long_and_lat[1:2])
+long_and_lat<-unique(long_and_lat)
 colnames(long_and_lat) <- c("x", "y")
-data(long_and_lat)
-# long_and_lat<- gUnaryUnion(long_and_lat)
+
+
+# coordinates(long_and_lat) <- ~ x + y
+# proj4string(long_and_lat)  <-  sf_dengue@proj4string
+# long_and_lat <- spTransform(long_and_lat, CRS = CRS(proj4string(sf_dengue)))
+# # long_and_lat<- gUnaryUnion(long_and_lat)
 
 ```
 
 Static two-panel plot of data from the 2016 Dengue case in the county of Taiwan,
 ```{r}
-plot(dengue_3d, s.region =long_and_lat)
+plot(sf_dengue,col="red")
+plot(taiwan_0_map,add=TRUE)
+
+map <- as(taiwan_0_map,"owin")
+plot(map)
+
+plot(dengue_3d ,s.region=fitted(map),col="red",type="projection" )
+plot(dengue_3d ,s.region=fitted(map),col="red",type="scatter" )
+plot(dengue_3d,s.region=fitted(map),type="mark")
+
+
 ```
 
 
 
 An alternative static display in which the time is treated as a quantitative mark attached to each location, and the locations are plotted with the size and/or color of the plotting symbol determined by the value of the mark. 
 ```{r}
-plot(dengue_3d, s.region = long_and_lat, pch = 19, mark = TRUE)
+# plot(dengue_3d, s.region = tw_sp, pch = 19, mark = TRUE)
 ```
 
 Animation of a space-time point pattern. The approximate running time of the animation (in seconds) is set through the runtime parameter, although the animation may actually run more slowly than this, depending on the size of the data-set and the hardware con???guration. If runtime = NULL, the animation is displayed as quickly as the data-set and hardware con???guration allow. 
 ```{r}
-animation(dengue_3d,  s.region = long_and_lat,  t.region=dengue_3d[,3],runtime=1, incident="red",  prevalent="pink3", pch=19, cex=0.5, plot.s.region=TRUE, scales=TRUE, border.frac=0.05, add=FALSE)
+# stan(dengue_3d, bgpoly = map, bgframe = FALSE)
 ```
 
-Slicing using time and width parameter using the rpanel and rgl package
-```{r}
-#stan(dengue_3d, bgpoly =long_and_lat, bgframe = FALSE)
-```
+
 
 # Analyzing space-time point process data
 
@@ -155,4 +167,22 @@ the space-time inhomogeneous pair correlation function and K-function can be use
 For a second-order intensity reweighted stationary, isotropic spatio-temporal point process,
 the space-time inhomogeneous K-function (STIK-function). STIK function characterizes the second-order properties of a second-order intensity reweighted stationary spatio-temporal point process, and can be used as a measure of spatiotemporal aggregation or regularity
 
+```{r}
+dengue_3d <- as.3dpoints(dengue_3d[, 1] / 1000, dengue_3d[, 2] / 1000, dengue_3d[,3])
+long_and_lat <- long_and_lat / 1000
+Mt <- density(dengue_3d[ ,3], n=1000)
+mut <- Mt$y[findInterval(dengue_3d[ ,3], Mt$x)] * dim(dengue_3d)[1]
+h <- mse2d(as.points(dengue_3d[,1:2]),as.matrix(taiwan), nsmse = 50, range = 4)
+h <- h$h[which.min(h$mse)]
+Ms <- kernel2d(as.points(dengue_3d[ ,1:2]), as.matrix(taiwan), h = h, nx = 5000, ny = 5000)
+atx <- findInterval(x = dengue_3d[ ,1], vec = Ms$x)
+aty <- findInterval(x = dengue_3d[ ,2], vec = Ms$y)
+mhat <- NULL
+for(i in 1:length(atx)) mhat <- c(mhat, Ms$z[atx[i],aty[i]])
+u <- seq(0, 10, by = 1)
+v <- seq(0, 15, by = 1)
+# stik <- STIKhat(xyt = dengue_3d, s.region = as.matrix(taiwan), t.region = c(1, 200),lambda = mhat * mut / dim(dengue_3d)[1], dist = u, times = v, infectious = TRUE)
+# g <- PCFhat(xyt = dengue_3d, lambda = mhat * mut / dim(dengue_3d)[1], dist = 1:20,times = 1:20, s.region = as.matrix(taiwan), t.region = c(1,200))
+
+```
 
