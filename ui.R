@@ -48,27 +48,37 @@ navbarPage("Dangy", id="nav",
                                  width = 450, 
 
                                  h2("Filters"),
-                                 sliderInput("yearSlider",
-                                             "Year:",
-                                             min = 1998,
-                                             max = 2018,
-                                             value = 1998),
+                                 #sliderInput("yearSlider",
+                                 #            "Year:",
+                                 #            min = 1998,
+                                 #            max = 2018,
+                                 #            value = c(1998,1999)),
+                                 selectInput("yearSlider", "Years:", selected = 1998,
+                                             c(1998,1999,2000,2001,2002,2003,2004,
+                                               2005,2006,2007,2008,2009,2010,2011,
+                                               2012,2013,2014,2015,2016,2017,2018)),
                                  selectInput("filters", "Attributes:", selected = "age_group",
                                              c("Age" = "age_group",
                                                "Gender" = "gender",
                                                "Subzone" = "Living_county")),
                                 #plotlyOutput(outputId = "barplot", height = 350)
-                                plotlyOutput(outputId = "timeplot", height = 350)
+                                #plotlyOutput(outputId = "mainplot", height = 350)
+                                #plotlyOutput(outputId = "timeplot", height = 350)
+                                bsCollapse(id = "collapseExample", open = "Case Count over Years",
+                                           bsCollapsePanel("Case Count over Years", plotlyOutput(outputId = "mainplot", height = 350), style = "info"),
+                                           bsCollapsePanel("Cases Count per Month", plotlyOutput(outputId = "timeplot", height = 350), style = "info"),
+                                           bsCollapsePanel("Distribution of Attributes", plotlyOutput(outputId = "barplot", height = 350), style = "success")
+                                )
+                                
                    ),
-                   
-                   absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-                                 draggable = TRUE, top = "auto", left = 50, right = "auto", bottom = 50,
-                                 width = 300, height = 90,
-                                 h4("Methods of Visualisation:"),
-                                 selectInput("methods", label = NULL, selected = "feature_3",
-                                             choices = c("Attribute Distribution" = "feature_3",
-                                               "Cases against Time" = "feature_5"))
-                   ),
+                   #absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                   #              draggable = TRUE, top = "auto", left = 50, right = "auto", bottom = 50,
+                   #              width = 300, height = 90,
+                   #              h4("Methods of Visualisation:"),
+                   #              selectInput("methods", label = NULL, selected = "feature_3",
+                   #                          choices = c("Attribute Distribution" = "feature_3",
+                   #                            "Cases against Time" = "feature_5"))
+                   #),
 
                    
                    tags$div(id="cite",

@@ -37,12 +37,27 @@ function(input, output) {
     
     map_dengue <- 
       tm_basemap(leaflet::providers$OpenStreetMap)+
+      tm_view(alpha = 1, set.zoom.limits = c(8,21)) +
       tm_shape(sf_dengue)+
       tm_dots(col = "red",
                  border.col = "black",
                  border.lwd = 1) 
     tmap_leaflet(map_dengue)
     
+  })
+  
+  # ===========  Feature 2 - Distribution of Cases over Years Plot  =============
+  output$mainplot <- renderPlotly({
+    
+    agg_date <- df_dengue %>% 
+      dplyr::mutate(Onset_Year = format(Onset_day, "%Y")) %>%
+      group_by(Onset_Year) %>%
+      summarise(total_cases = n())
+    
+    ggplot(agg_date, aes(y = total_cases, x = Onset_Year)) +
+      geom_bar(stat= "identity", fill = "#0073C2FF") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(y = "Number of cases", x = "Year")
   })
   
   # ===========  Feature 3 - Distribution Plot  =============
@@ -99,24 +114,39 @@ function(input, output) {
     df_filtered <- df_dengue %>%
       filter(grepl(filter_year, Onset_day))
     
-    agg_date <- df_filtered %>%
-      group_by(Onset_day) %>%
+    agg_date <- df_filtered %>% 
+      dplyr::mutate(Onset_Month = format(Onset_day, "%m")) %>%
+      group_by(Onset_Month) %>%
       summarise(total_cases = n())
     
-    ggplot(data = agg_date) +
-      geom_line(aes(x = Onset_day, y = total_cases), 
-                color = "#09557f",
-                alpha = 0.6,
-                size = 0.6) +
-      labs(x = "Date", 
-           y = "Cases",
-           title = "Case Count over Months") +
-      scale_x_date(
-        labels = date_format("%Y-%m"),
-        breaks = "1 month") +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    ggplot(agg_date, aes(y = total_cases, x = Onset_Month)) +
+      geom_bar(stat= "identity", fill = "#0073C2FF") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(y = "Number of cases", x = "Month")
+    
+    #ggplot(data = agg_date) +
+    #  geom_line(aes(x = Onset_day, y = total_cases), 
+    #            color = "#09557f",
+    #            alpha = 0.6,
+    #            size = 0.6) +
+    #  labs(x = "Date", 
+    #       y = "Cases",
+    #       title = "Case Count over Months") +
+    #  scale_x_date(
+    #    labels = date_format("%Y-%m"),
+    #    breaks = "1 month") +
+    #  theme_minimal() +
+    #  theme(axis.text.x = element_text(angle = 90, hjust = 1))
   })
+  
+  observeEvent(input$add, {
+    shinyjs::addClass(selector = "html", class = "shiny-busy")
+  })
+  observeEvent(input$remove, {
+    shinyjs::removeClass(selector = "html", class = "shiny-busy")
+  })   
+  
+  
   # ===========  Feature 5 & 6 - Data Table View  =============
   
 
