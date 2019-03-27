@@ -31,28 +31,35 @@ Taiwan follows EPSG 3826 (http://spatialreference.org/ref/epsg/twd97-tm2-zone-12
 ```{r}
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
 
-#taiwan <- readShapePoly("data/taiwan_data/COUNTY_MOI_1070516.shp")
-#taiwan@proj4string<- CRS( "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
-#taiwan.union <- aggregate(taiwan)
+#taiwan <- readShapePoly("data/taiwan_data/")
+taiwan <- readOGR(dsn = "data/taiwan_data", layer = "COUNTY_MOI_1071226", stringsAsFactors=TRUE)
+taiwan@proj4string<- CRS( "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
+taiwan.union <- aggregate(taiwan)
+taiwan <- as(taiwan, "SpatialPolygons")
+taiwan <- na.omit(taiwan)
 
 
 df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>% 
-  filter(as.Date(Onset_day) >= "1998-01-01" & as.Date(Onset_day)< "1999-01-01")
+  filter(as.Date(Onset_day) >= "2016-01-01" & as.Date(Onset_day)< "2017-01-01")
 
 # Check for NA values for coordinates
  sum(is.na(df_dengue$Minimum_statistical_area_center_point_X))
  sum(is.na(df_dengue$Minimum_statistical_area_center_point_Y))
  df_dengue<- df_dengue[!is.na(df_dengue$Minimum_statistical_area_center_point_X),]
  df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'None'),]
+ sum(is.na(df_dengue))
  
  # Type conversion
- df_dengue[, c(10,11,19,23,24)] <- sapply(df_dengue[, c(10,11,19,23,24)], as.numeric)
+ #df_dengue[, c(10,11,19)] <- sapply(df_dengue[, c(10,11,19)], as.numeric)
+df_dengue$Minimum_statistical_area_center_point_X <- as.numeric(paste( df_dengue$Minimum_statistical_area_center_point_X))
+df_dengue$Minimum_statistical_area_center_point_Y <- as.numeric(paste( df_dengue$Minimum_statistical_area_center_point_Y))
+df_dengue$Determine_the_number_of_cases <- as.numeric(paste( df_dengue$Determine_the_number_of_cases))
  
   # Transform into SF object
  sf_dengue <- st_as_sf(df_dengue, 
                        coords = c("Minimum_statistical_area_center_point_X",
                                   "Minimum_statistical_area_center_point_Y"),
-                        crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs",na.fail=FALSE)
+                        crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
 sf_dengue <- na.omit(sf_dengue)
 sp_dengue <- as(sf_dengue, 'Spatial')
 ```
@@ -80,6 +87,7 @@ tmap_mode("plot")
 ```{r echo=TRUE, eval=TRUE}
 dengue_ppp <- as(sp_dengue, "ppp")
 summary(dengue_ppp) 
+plot(dengue_ppp)
 ```
 
 # Combining  GP clinics points and the study area 
@@ -89,8 +97,9 @@ plot(tw_owin)
 summary(tw_owin)
 
 dengueTW_ppp = dengue_ppp[tw_owin]
+dengueTW_ppp <- unique(dengueTW_ppp) 
 summary(dengueTW_ppp)
-plot(dengueTW_ppp)
+#plot(dengueTW_ppp)
 ```
 ```{r}
 qt <- quadrat.test(dengueTW_ppp,                     
@@ -110,13 +119,30 @@ qt
 # Kernel Density Estimation
 
 ```{r echo=TRUE, eval=TRUE}
-dengueTW_ppp <- rescale(dengueTW_ppp, 1000, "km") 
-kde_taiwan_bw <- density(dengueTW_ppp, sigma=1.5, edge=TRUE, kernel="gaussian")
+#dengueTW_ppp.km <- rescale(dengueTW_ppp, 1000, "km") 
+kde_taiwan_bw <- density(dengueTW_ppp, sigma=0.5, edge=TRUE, kernel="gaussian")
 
 #plot(kde_taiwan_bw)
 ```
 
 ```{r}
 plot(kde_taiwan_bw)
+```
+
+```{r}
+gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
+
+spplot(gridded_kde_taiwan_bw)
+
+kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
+```
+
+```{r}
+tmap_mode("view")
+tm_shape(taiwan_ts_map_sf)+
+    tm_borders(col = "grey40",alpha=0.5)+
+    tm_shape(kde_taiwan_bw_raster)+
+    tm_raster("v", alpha = 0.8)+ 
+    tm_layout(basemaps = c('OpenStreetMap'))
 ```
 
