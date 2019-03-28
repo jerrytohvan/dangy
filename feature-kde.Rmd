@@ -11,8 +11,12 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
 #Package load for Project
 ```{r}
+
+# require(installr)
+# install.ImageMagick()
+
 packages = c("sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr", "spatstat",
-             'maptools', 'leaflet') 
+             'maptools', 'leaflet', 'magick', 'purrr') 
 for (p in packages){
   if(!require(p, character.only = T)){
     install.packages(p) 
@@ -139,10 +143,20 @@ kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
 
 ```{r}
 tmap_mode("view")
-tm_shape(taiwan_ts_map_sf)+
+c_osm <- tmaptools::read_osm(kde_taiwan_bw_raster, ext = 1.05)
+map <- tm_shape(taiwan_ts_map_sf)+
     tm_borders(col = "grey40",alpha=0.5)+
+    tm_shape(c_osm)+
+    tm_rgb() +
     tm_shape(kde_taiwan_bw_raster)+
-    tm_raster("v", alpha = 0.8)+ 
-    tm_layout(basemaps = c('OpenStreetMap'))
+    tm_raster("v", alpha = 0.65)+ 
+    tm_layout(basemaps = c('OpenStreetMap')) +
+    tm_layout("Dengue Outbreak Distribution in 2016", 
+            title.size = 1, 
+            title.position = c("right","top"),
+            legend.title.size = 1,
+            legend.text.size = 0.7,
+            legend.position = c("right","bottom"))
+tmap_save(map, filename="testKDE.png")
 ```
 
