@@ -1,0 +1,205 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#dir.create("examples")
+library(magick)
+
+# example 1: simple animated countdown from 10 to "GO!".
+png(file="examples/example%02d.png", width=200, height=200)
+  for (i in c(10:1, "G0!")){
+    plot.new()
+    text(.5, .5, i, cex = 6)
+  }
+dev.off()
+
+# convert the .png files to one .gif file using ImageMagick. 
+# The system() function executes the command as if it was done
+# in the terminal. the -delay flag sets the time between showing
+# the frames, i.e. the speed of the animation.
+system("convert *.png example_1.gif")
+system(command= "convert examples/*.png -delay 40 -loop 0 example_1.gif")
+
+# to not leave the directory with the single jpeg files
+# I remove them.
+#file.remove(list.files(pattern=".png"))
+```
+
+```{r}
+bigdata <- image_read("examples/example01.png")
+frink <- image_read("examples/example02.png")
+logo <- image_read("examples/example03.png")
+img <- c(bigdata, frink, logo)
+img <- image_scale(img, "300x300")
+image_info(img)
+image_animate(image_scale(img, "200x200"), fps = 1, dispose = "previous")
+```
+```{r}
+image_animate(image_scale(img, "200x200"), fps = 1, dispose = "previous")
+```
+
+```{r setup, include=TRUE, eval=TRUE,message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+
+packages = c("sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr", "spatstat",
+             'maptools', 'leaflet', 'magick', 'purrr') 
+for (p in packages){
+  if(!require(p, character.only = T)){
+    install.packages(p) 
+  } 
+  library(p,character.only = T) 
+}
+
+taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
+
+#taiwan <- readShapePoly("data/taiwan_data/")
+taiwan <- readOGR(dsn = "data/taiwan_data", layer = "COUNTY_MOI_1071226", stringsAsFactors=TRUE)
+taiwan@proj4string<- CRS( "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
+taiwan.union <- aggregate(taiwan)
+taiwan <- as(taiwan, "SpatialPolygons")
+taiwan <- na.omit(taiwan)
+
+```
+
+```{r}
+
+dates <-matrix(list(), nrow=20, ncol=2)
+dates[[1,1]] = as.Date("1998-01-01", "%Y-%m-%d")
+dates[[1,2]] = as.Date("1999-01-01", "%Y-%m-%d")
+dates[[2,1]] = as.Date("1998-01-01", "%Y-%m-%d")
+dates[[2,2]] = as.Date("2000-01-01", "%Y-%m-%d")
+dates[[3,1]] = as.Date("1998-01-01", "%Y-%m-%d")
+dates[[3,2]] = as.Date("2002-01-01", "%Y-%m-%d")
+dates[[4,1]] = as.Date("1998-01-01", "%Y-%m-%d")
+dates[[4,2]] = as.Date("2003-01-01", "%Y-%m-%d")
+dates[[5,1]] = as.Date("1998-01-01", "%Y-%m-%d")
+dates[[5,2]] = as.Date("2004-01-01", "%Y-%m-%d")
+dates[[6,1]] = as.Date("2004-01-01", "%Y-%m-%d")
+dates[[6,2]] = as.Date("2005-01-01", "%Y-%m-%d")
+dates[[7,1]] = as.Date("2005-01-01", "%Y-%m-%d")
+dates[[7,2]] = as.Date("2006-01-01", "%Y-%m-%d")
+dates[[8,1]] = as.Date("2006-01-01", "%Y-%m-%d")
+dates[[8,2]] = as.Date("2007-01-01", "%Y-%m-%d")
+dates[[9,1]] = as.Date("2007-01-01", "%Y-%m-%d")
+dates[[9,2]] = as.Date("2008-01-01", "%Y-%m-%d")
+dates[[10,1]] = as.Date("2008-01-01", "%Y-%m-%d")
+dates[[10,2]] = as.Date("2009-01-01", "%Y-%m-%d")
+dates[[11,1]] = as.Date("2009-01-01", "%Y-%m-%d")
+dates[[11,2]] = as.Date("2010-01-01", "%Y-%m-%d")
+dates[[12,1]] = as.Date("2010-01-01", "%Y-%m-%d")
+dates[[12,2]] = as.Date("2010-01-01", "%Y-%m-%d")
+dates[[13,1]] = as.Date("2011-01-01", "%Y-%m-%d")
+dates[[13,2]] = as.Date("2011-01-01", "%Y-%m-%d")
+dates[[14,1]] = as.Date("2012-01-01", "%Y-%m-%d")
+dates[[14,2]] = as.Date("2012-01-01", "%Y-%m-%d")
+dates[[15,1]] = as.Date("2013-01-01", "%Y-%m-%d")
+dates[[15,2]] = as.Date("2013-01-01", "%Y-%m-%d")
+dates[[16,1]] = as.Date("2014-01-01", "%Y-%m-%d")
+dates[[16,2]] = as.Date("2014-01-01", "%Y-%m-%d")
+dates[[17,1]] = as.Date("2015-01-01", "%Y-%m-%d")
+dates[[17,2]] = as.Date("2015-01-01", "%Y-%m-%d")
+dates[[18,1]] = as.Date("2016-01-01", "%Y-%m-%d")
+dates[[18,2]] = as.Date("2016-01-01", "%Y-%m-%d")
+dates[[19,1]] = as.Date("2017-01-01", "%Y-%m-%d")
+dates[[19,2]] = as.Date("2017-01-01", "%Y-%m-%d")
+dates[[20,1]] = as.Date("2018-01-01", "%Y-%m-%d")
+dates[[20,2]] = as.Date("2018-01-01", "%Y-%m-%d")
+
+for (r in 1:nrow(dates)){
+  df_dengue <- jsonlite::fromJSON("data/dengue_case.json") %>% 
+    #filter(as.Date(Onset_day) >= "2016-01-01" & as.Date(Onset_day)< "2017-01-01")
+   filter(as.Date(Onset_day) >= (dates[r,1]) & as.Date(Onset_day)< (dates[r,2]))
+  
+  # Check for NA values for coordinates
+ sum(is.na(df_dengue$Minimum_statistical_area_center_point_X))
+ sum(is.na(df_dengue$Minimum_statistical_area_center_point_Y))
+ df_dengue<- df_dengue[!is.na(df_dengue$Minimum_statistical_area_center_point_X),]
+ df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'None'),]
+ sum(is.na(df_dengue))
+ 
+ # Type conversion
+ #df_dengue[, c(10,11,19)] <- sapply(df_dengue[, c(10,11,19)], as.numeric)
+df_dengue$Minimum_statistical_area_center_point_X <- as.numeric(paste( df_dengue$Minimum_statistical_area_center_point_X))
+df_dengue$Minimum_statistical_area_center_point_Y <- as.numeric(paste( df_dengue$Minimum_statistical_area_center_point_Y))
+df_dengue$Determine_the_number_of_cases <- as.numeric(paste( df_dengue$Determine_the_number_of_cases))
+ 
+  # Transform into SF object
+ sf_dengue <- st_as_sf(df_dengue, 
+                       coords = c("Minimum_statistical_area_center_point_X",
+                                  "Minimum_statistical_area_center_point_Y"),
+                        crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
+sf_dengue <- na.omit(sf_dengue)
+sp_dengue <- as(sf_dengue, 'Spatial')
+  
+  # Check for NA values for coordinates
+  #-------------------------------
+
+  sp_dengue <- as(sp_dengue, 'SpatialPoints')
+  dengue_ppp <- as(sp_dengue, "ppp")
+  #summary(dengue_ppp) 
+  #plot(dengue_ppp)
+  
+  tw_owin <- as(taiwan_ts_map_sp, "owin") 
+  #plot(tw_owin) 
+  #summary(tw_owin)
+  
+  dengueTW_ppp = dengue_ppp[tw_owin]
+  dengueTW_ppp <- unique(dengueTW_ppp) 
+  #summary(dengueTW_ppp)
+  
+  
+  
+  #-------------------------------
+  
+  kde_taiwan_bw <- density(dengueTW_ppp, sigma=0.5, edge=TRUE, kernel="gaussian")
+  #plot(kde_taiwan_bw)
+  gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
+  
+  spplot(gridded_kde_taiwan_bw)
+  
+  kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
+  
+  #-------------------------------
+  
+  tmap_mode("view")
+  c_osm <- tmaptools::read_osm(kde_taiwan_bw_raster, ext = 1.05)
+  map <- tm_shape(taiwan_ts_map_sf)+
+      tm_borders(col = "grey40",alpha=0.5)+
+      tm_shape(c_osm)+
+      tm_rgb() +
+      tm_shape(kde_taiwan_bw_raster)+
+      tm_raster("v", alpha = 0.65)+ 
+      tm_layout(basemaps = c('OpenStreetMap')) +
+      tm_layout(sprintf("Dengue Outbreak Distribution in %s", toString(dates[r,1])), 
+              title.size = 1, 
+              title.position = c("right","top"),
+              legend.title.size = 1,
+              legend.text.size = 0.7,
+              legend.position = c("right","bottom"))
+  tmap_save(map, filename=sprintf("plots/plot%s.png", r))
+  print(sprintf("gif saved for plot %s", r))
+}     
+
+```
+```{r}
+plot1 <- image_read("plots/plot1.png")
+plot2 <- image_read("plots/plot2.png")
+plot3 <- image_read("plots/plot3.png")
+plot4 <- image_read("plots/plot4.png")
+plot5 <- image_read("plots/plot5.png")
+plot6 <- image_read("plots/plot6.png")
+plot7 <- image_read("plots/plot7.png")
+plot8 <- image_read("plots/plot8.png")
+plot9 <- image_read("plots/plot9.png")
+plot10 <- image_read("plots/plot10.png")
+plot11 <- image_read("plots/plot11.png")
+
+img <- c(plot1, plot2, plot3, plot4, plot5, plot6, plot7,plot8, plot9, plot10, plot11)
+img <- image_scale(img, "500x500")
+image_info(img)
+image_animate(image_scale(img, "500x500"), fps = 1, dispose = "previous")
+  
+```
