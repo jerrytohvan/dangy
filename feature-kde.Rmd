@@ -157,6 +157,6 @@ map <- tm_shape(taiwan_ts_map_sf)+
             legend.title.size = 1,
             legend.text.size = 0.7,
             legend.position = c("right","bottom"))
-tmap_save(map, filename="testKDE.png")
+tmap_save(map, filename="plot01.png")
 ```
 
