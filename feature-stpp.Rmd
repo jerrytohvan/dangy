@@ -127,8 +127,11 @@ taiwan@proj4string
 taiwan_main <- taiwan.union@polygons[[1]]@Polygons[[counter]]@coords
 plot(taiwan_main,asp=1,type="l")
 
+# xy-locations and cumulative distribution of the times
 plot(dengue_3d,s.region=taiwan_main,col="red",type="projection")
+#space-time 3D scatter
 plot(dengue_3d ,s.region=taiwan_main,col="red",type="scatter" )
+#the time-mark and space-mark.
 plot(dengue_3d,s.region=taiwan_main,type="mark")
 
 ```
@@ -148,14 +151,7 @@ Animation of a space-time point pattern. The approximate running time of the ani
 
 
 
-# Analyzing space-time point process data
-
-the space-time inhomogeneous pair correlation function and K-function can be used as measure of spatio-temporal clustering/regularity and as measure of spatio-temporal interaction (Gabriel and Diggle 2009; Møller and Ghorbani
-2012).
-
-##Space-time inhomogeneous K-function (STIK)
-For a second-order intensity reweighted stationary, isotropic spatio-temporal point process,
-the space-time inhomogeneous K-function (STIK-function). STIK function characterizes the second-order properties of a second-order intensity reweighted stationary spatio-temporal point process, and can be used as a measure of spatiotemporal aggregation or regularity
+#Animating Spatial Points
 ```{r}
 #https://d4tagirl.com/2017/05/how-to-plot-animated-maps-with-gganimate
 
@@ -180,8 +176,8 @@ dengue_points$Onset_day <- as.Date(dengue_points$Onset_day)
 dengue_points <- dengue_points%>%
   mutate(months=as.numeric(format(Onset_day, "%m")))
 date_dengue <- as.data.frame(as.Date(dengue_points$Onset_day))
-date_dengue$coords.x1 <- 0
-date_dengue$coords.x2 <- 0
+date_dengue$coords.x1 <- 120.2900
+date_dengue$coords.x2 <- 22.68133
 colnames(date_dengue) <- c("start_date","coords.x1","coords.x2")
 start_date <- date_dengue[1,]
 
@@ -199,7 +195,8 @@ date_dengue<-unique(date_dengue)
 
 #========== old API ========
 map <-taiwan_plot+
-   geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day),  data = dengue_points,  colour = 'red', alpha = .05, inherit.aes = FALSE)+
+   geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day,cumulative=TRUE),  data = dengue_points,  colour = 'red', alpha = .2, inherit.aes = FALSE)+
+  geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day),  data = dengue_points,  colour = 'red', alpha = .5, inherit.aes = FALSE)+
   geom_point(aes(x = coords.x1, y = coords.x2, # this is the init transparent frame
                  frame = start_date,
                  cumulative = TRUE),
@@ -209,41 +206,16 @@ map <-taiwan_plot+
                  cumulative = TRUE),
              data = date_dengue, alpha = 0, inherit.aes = FALSE) +
   # Here comes the gganimate specific bits
-  labs(title = 'Day: {frame_time}') 
-gganimate(map)
+  labs(title = 'Day: ') 
 
+ 
+gganimate(map, interval = .2, "year-datapoints.gif")
 #========== old API ========
 
 #https://github.com/thomasp85/gganimate
- 
-
-# ani.options(interval = 1)
 #https://stackoverflow.com/questions/52510967/create-a-flyover-map-animation-using-ggmap-and-gganimate
 #devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
-```
-UNABLE TO RUN: System loads but wont stop, once manually stopped R Studio crashes
-```{r}
-# Mt <- density(dengue_3d[ ,3])
-# mut <- Mt$y[findInterval(dengue_3d[ ,3], Mt$x)] * dim(dengue_3d)[1]
-# h <- mse2d(as.points(dengue_3d[,1:2]), taiwan_main, nsmse = 50, range = 4)
-# h <- h$h[which.min(h$mse)]
-# Ms <- kernel2d(as.points(dengue_3d[ ,1:2]), taiwan_main, h = h, nx = 2000, ny = 2000)
-# atx <- findInterval(x = dengue_3d[ ,1], vec = Ms$x)
-# aty <- findInterval(x = dengue_3d[ ,2], vec = Ms$y)
-# mhat <- NULL
-# for(i in 1:length(atx)) mhat <- c(mhat, Ms$z[atx[i],aty[i]])
-# u <- seq(0, 10, by = 1)
-# v <- seq(0, 15, by = 1)
-# mhat[is.na(mhat)] <- 0
-# # g <- PCFhat(xyt = dengue_3d,  s.region = taiwan_main)
-# # stik <- STIKhat(xyt = dengue_3d, s.region = taiwan_main,infectious=TRUE)
-# 
-# stik <- STIKhat(xyt = dengue_3d, s.region = taiwan_main, t.region = c(1, 200),lambda =mhat*mut/dim(dengue_3d)[1], dist = u, times = v, infectious = TRUE)
-# g <- PCFhat(xyt = dengue_3d, lambda = mhat * mut / dim(dengue_3d)[1], dist = 1:20,times = 1:20, s.region = taiwan_main, t.region = c(1, 200))
-# 
-# 
-# plotK(stik)
-# plotPCF(g)
-# plotPCF(g, persp = TRUE, theta = -65, phi = 35)
+
+#make the opacity of the passing dates lesser
 ```
 
