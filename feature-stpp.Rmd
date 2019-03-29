@@ -22,7 +22,7 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
 #Package load for Project
 ```{r}
-packages = c("lubridate","stpp","sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr","spdep","rpanel","rgl","maptools") 
+packages = c("lubridate","stpp","sp","sf","tidyverse","tmap","rjson", "rgdal", "geojsonio", "GISTools",'spatialEco', "raster","dplyr","spdep","rpanel","rgl","maptools","r2d3","gganimate") 
 for (p in packages){
   if(!require(p, character.only = T)){
       install.packages(p) 
@@ -142,7 +142,8 @@ plot(dengue_3d, s.region = taiwan_main, pch = 19, mark = TRUE)
 
 Animation of a space-time point pattern. The approximate running time of the animation (in seconds) is set through the runtime parameter, although the animation may actually run more slowly than this, depending on the size of the data-set and the hardware con???guration. If runtime = NULL, the animation is displayed as quickly as the data-set and hardware con???guration allow. 
 ```{r}
-stan(dengue_3d, bgpoly = taiwan_main, bgframe = FALSE)
+#stan(dengue_3d, bgpoly = taiwan_main, bgframe = TRUE)
+
 ```
 
 
@@ -156,14 +157,89 @@ the space-time inhomogeneous pair correlation function and K-function can be use
 For a second-order intensity reweighted stationary, isotropic spatio-temporal point process,
 the space-time inhomogeneous K-function (STIK-function). STIK function characterizes the second-order properties of a second-order intensity reweighted stationary spatio-temporal point process, and can be used as a measure of spatiotemporal aggregation or regularity
 ```{r}
+#https://d4tagirl.com/2017/05/how-to-plot-animated-maps-with-gganimate
 
+library(maps)
+# library(tibble)
+# library(lubridate)
+library(ggplot2)    
+library(ggmap)
+library(gganimate)
+# library(gifski)
+
+# taiwan_map <- fortify(taiwan_ts_map_sp)
+taiwan_map <- fortify(taiwan)
+datetime <- as.data.frame(dengue_3d[,3])
+taiwan_plot <- ggplot(data=taiwan_map, aes(x = long, y = lat, group=group))+
+  geom_path() + 
+  coord_map()
+
+dengue_points <- as.data.frame(sf_dengue) %>%
+   dplyr::select(Onset_day, coords.x1,coords.x2)
+dengue_points$Onset_day <- as.Date(dengue_points$Onset_day)
+dengue_points <- dengue_points%>%
+  mutate(months=as.numeric(format(Onset_day, "%m")))
+date_dengue <- as.data.frame(as.Date(dengue_points$Onset_day))
+date_dengue$coords.x1 <- 0
+date_dengue$coords.x2 <- 0
+colnames(date_dengue) <- c("start_date","coords.x1","coords.x2")
+start_date <- date_dengue[1,]
+
+date_dengue<-date_dengue[!(date_dengue$start_date==start_date$start_date),]
+date_dengue<-unique(date_dengue)
+
+
+#========== new API ========
+# map <-taiwan_plot+
+#    geom_point(mapping = aes(x = coords.x1, y = coords.x2),  data = dengue_points,  colour = 'red', alpha = .05, inherit.aes = FALSE)
+# ani<- map + transition_states(months)+
+#   labs(title = 'Month: {closest_state}')
+# animate(ani, renderer = ffmpeg_renderer())
+#========== new API ========
+
+#========== old API ========
+map <-taiwan_plot+
+   geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day),  data = dengue_points,  colour = 'red', alpha = .05, inherit.aes = FALSE)+
+  geom_point(aes(x = coords.x1, y = coords.x2, # this is the init transparent frame
+                 frame = start_date,
+                 cumulative = TRUE),
+             data = start_date, alpha = 0, inherit.aes = FALSE) +
+  geom_point(aes(x = coords.x1, y = coords.x2, # this is the final transparent frames
+                 frame = start_date,
+                 cumulative = TRUE),
+             data = date_dengue, alpha = 0, inherit.aes = FALSE) +
+  # Here comes the gganimate specific bits
+  labs(title = 'Day: {frame_time}') 
+gganimate(map)
+
+#========== old API ========
+
+#https://github.com/thomasp85/gganimate
+ 
+
+# ani.options(interval = 1)
+#https://stackoverflow.com/questions/52510967/create-a-flyover-map-animation-using-ggmap-and-gganimate
+#devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
 ```
 UNABLE TO RUN: System loads but wont stop, once manually stopped R Studio crashes
 ```{r}
+# Mt <- density(dengue_3d[ ,3])
+# mut <- Mt$y[findInterval(dengue_3d[ ,3], Mt$x)] * dim(dengue_3d)[1]
+# h <- mse2d(as.points(dengue_3d[,1:2]), taiwan_main, nsmse = 50, range = 4)
+# h <- h$h[which.min(h$mse)]
+# Ms <- kernel2d(as.points(dengue_3d[ ,1:2]), taiwan_main, h = h, nx = 2000, ny = 2000)
+# atx <- findInterval(x = dengue_3d[ ,1], vec = Ms$x)
+# aty <- findInterval(x = dengue_3d[ ,2], vec = Ms$y)
+# mhat <- NULL
+# for(i in 1:length(atx)) mhat <- c(mhat, Ms$z[atx[i],aty[i]])
+# u <- seq(0, 10, by = 1)
+# v <- seq(0, 15, by = 1)
+# mhat[is.na(mhat)] <- 0
+# # g <- PCFhat(xyt = dengue_3d,  s.region = taiwan_main)
+# # stik <- STIKhat(xyt = dengue_3d, s.region = taiwan_main,infectious=TRUE)
 # 
-# g <- PCFhat(xyt = dengue_3d,  s.region = taiwan_main)
-# stik <- STIKhat(xyt = dengue_3d, s.region = taiwan_main,correction=TRUE,infectious=TRUE)
-# 
+# stik <- STIKhat(xyt = dengue_3d, s.region = taiwan_main, t.region = c(1, 200),lambda =mhat*mut/dim(dengue_3d)[1], dist = u, times = v, infectious = TRUE)
+# g <- PCFhat(xyt = dengue_3d, lambda = mhat * mut / dim(dengue_3d)[1], dist = 1:20,times = 1:20, s.region = taiwan_main, t.region = c(1, 200))
 # 
 # 
 # plotK(stik)
