@@ -1,4 +1,4 @@
-packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS") 
+packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"lubridate") 
 
 for (p in packages){
   if(!require(p, character.only = T)){
@@ -19,19 +19,23 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
 
 
-df_dengue <- jsonlite::fromJSON("data/dengue_case.json")
-sum(is.na(df_dengue$Minimum_statistical_area_center_point_X))
-sum(is.na(df_dengue$Minimum_statistical_area_center_point_Y))
-df_dengue<- df_dengue[!is.na(df_dengue$Minimum_statistical_area_center_point_X),]
+df_dengue.raw <- jsonlite::fromJSON("data/dengue_case.json")
+df_dengue.raw$ID <- seq.int(nrow(df_dengue.raw))
+sum(is.na(df_dengue.raw$Minimum_statistical_area_center_point_X))
+sum(is.na(df_dengue.raw$Minimum_statistical_area_center_point_Y))
+# Type conversion
+df_dengue.raw[, c(10,11,19,23,24)] <- sapply(df_dengue.raw[, c(10,11,19,23,24)], as.numeric)
+# Date conversion
+df_dengue.raw[, "Onset_day"] <- as.Date(df_dengue.raw$Onset_day, "%Y/%m/%d")
+df_dengue.raw[, "Case_study_date"] <- as.Date(df_dengue.raw$Case_study_date, "%Y/%m/%d")
+df_dengue.raw[, "Notification_day"] <- as.Date(df_dengue.raw$Notification_day, "%Y/%m/%d")
+
+df_dengue<- df_dengue.raw[!is.na(df_dengue.raw$Minimum_statistical_area_center_point_X),]
 df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'None'),]
 
-# Type conversion
-df_dengue[, c(10,11,19,23,24)] <- sapply(df_dengue[, c(10,11,19,23,24)], as.numeric)
-# Date conversion
-df_dengue[, "Onset_day"] <- as.Date(df_dengue$Onset_day, "%Y/%m/%d")
-df_dengue[, "Case_study_date"] <- as.Date(df_dengue$Case_study_date, "%Y/%m/%d")
-df_dengue[, "Notification_day"] <- as.Date(df_dengue$Notification_day, "%Y/%m/%d")
-
+df_dengue2 = df_dengue
+df_dengue2 = df_dengue[,-c(2:9,12:25)]
+df_dengue2 = rename(df_dengue, x = Minimum_statistical_area_center_point_X, y = Minimum_statistical_area_center_point_Y)
 
 # Transform into SF object
 sf_dengue <- st_as_sf(df_dengue, 
@@ -66,3 +70,11 @@ infected_countries_aggregate <-pts.poly@data %>%
   mutate(MONTH = months(as.Date(pts.poly@data$Onset_day))) %>%
   group_by( MONTH, Infected_country, Infected_counties_and_cities, Infected_village) %>% summarise(total_cases = n())
 
+
+verbose =c()
+printVerbose<-function(x,output){
+  verbose = append(verbose,paste("\n",x,sep=""))
+  output$my_dump = renderText({ 
+    paste(verbose, collapse=",")
+  })
+}

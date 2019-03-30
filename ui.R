@@ -1,3 +1,14 @@
+analysis_mode_options = c("1 Year","12 Weeks","14 Days")
+min_date = min(df_dengue2$Onset_day)
+max_date = max(df_dengue2$Onset_day)
+start_date = min_date
+years_options = year(df_dengue2$Onset_day) %>% unique
+kernel_options = c("gaussian","rectangular","triangular","epanechnikov","biweight","cosine","optcosine")
+region_options = c("All",sf_dengue$Living_county)
+break_bin = 10
+start_sigma = 0.5
+
+
 navbarPage("Dangy", id="nav",
            tabPanel("Project Info",
                     # Sidebar with a slider input for number of years
@@ -88,32 +99,47 @@ navbarPage("Dangy", id="nav",
               
            ),
            
-           tabPanel("Further Analysis",
-              fluidRow(
-                column(3,
-                       selectInput("states", "States", c("All states"="", structure(state.abb, names=state.name), "Washington, DC"="DC"), multiple=TRUE)
-                ),
-                column(3,
-                       conditionalPanel("input.states",
-                                        selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
-                       )
-                ),
-                column(3,
-                       conditionalPanel("input.states",
-                                        selectInput("zipcodes", "Zipcodes", c("All zipcodes"=""), multiple=TRUE)
-                       )
-                )
-              ),
-              fluidRow(
-                column(1,
-                       numericInput("minScore", "Min score", min=0, max=100, value=0)
-                ),
-                column(1,
-                       numericInput("maxScore", "Max score", min=0, max=100, value=100)
-                )
-              ),
-              hr(),
-              DT::dataTableOutput("ziptable")
+           tabPanel("Spatial Temporal Analysis",
+                    tags$style(HTML(".datepicker {z-index:99999 !important;}")),
+                    sidebarLayout(
+                      position = "right",
+                      sidebarPanel(
+                        width = 3,
+                        h3("Parameters"),
+                        selectInput("analysis_mode",
+                                    "Date range by:",
+                                    analysis_mode_options
+                        ),
+                        conditionalPanel(
+                          condition = "input.analysis_mode == '1 Year'",
+                          selectInput("sptem_yearpick",
+                                      h5("Select year:"),
+                                      years_options
+                          )
+                        ),
+                        conditionalPanel(
+                          condition = "input.analysis_mode == '12 Weeks' | input.analysis_mode == '14 Days'",
+                          dateInput("sptem_datepick", label = h5("Select start date:"),format = "dd/mm/yyyy", value = start_date, min=min_date, max= max_date)
+                        ),
+                        selectInput("sptem_regionpick",
+                                    h5("Select region:"),
+                                    region_options
+                        ),
+                        numericInput("sptem_sigpick", h5("Select sigma:"), start_sigma, min = 0.05, max = 10, step = 0.1),
+                        numericInput("sptem_binpick", h5("Select number of bins:"), break_bin, min = 5, max = 25, step = 1),
+                        selectInput("sptem_kernelpick",
+                                    h5("Select kernel:"),
+                                    kernel_options
+                        ),
+                        actionButton("sptem_gen_btn", "Generate")
+                        
+                      ),
+                      
+                      # Show a plot of the generated distribution
+                      mainPanel(
+                        textOutput("my_dump")
+                      )
+                    )
            ),
            
            tabPanel("Data Table",
