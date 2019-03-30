@@ -173,7 +173,12 @@ function(input, output) {
   #========= Spatial Temporal =========
 
     observeEvent(input$sptem_gen_btn, {
-      disable("sptem_gen_btn")
+      shinyjs::disable("sptem_gen_btn")
+      output$sptem_gifplot <- renderImage(
+        {
+          return(NULL)
+        }
+      )
       
       output$my_dump = renderText({
         "loading started"
@@ -279,16 +284,16 @@ function(input, output) {
        })
     
        tmap_mode("plot")
-    
+
        if (dir.exists("plots")) {
          unlink("plots", recursive = TRUE)
        }
        dir.create("plots")
-    
+
        plot_list = list()
-    
+
        list_i = 1
-    
+
        print("Generating Density Maps")
        withProgress(message = 'Generating Density Maps', value = 0, {
          for(ppp_range in ppp_list){
@@ -298,12 +303,12 @@ function(input, output) {
            list_i = list_i+1
            incProgress(1/length(ppp_list), detail = paste("Generating KDE map for plot ", list_i))
            }
-       })    
+       })
        tmap_mode("view")
-    
+
        min_val= .Machine$integer.max
        max_val=0
-    
+
        for(plot_a in plot_list){
          plot_a$v[is.na(plot_a$v)] <- 0
          if(min(plot_a$v)<min_val){
@@ -313,24 +318,24 @@ function(input, output) {
            max_val=max(plot_a$v)
          }
        }
-    
+
        v_range = ceiling(max_val) - floor(min_val)
        r_interval = ceiling(v_range/input$sptem_binpick)
        bins = seq(0,r_interval*input$sptem_binpick,r_interval)
-    
-    
+
+
        list_i = 1
-    
+
        print("Output to PNG")
-    
+
        withProgress(message = 'Output maps to PNG', value = 0, {
          for(kde_taiwan_bw in plot_list){
            gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
-      
+
            kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
-      
+
            projection(kde_taiwan_bw_raster) =  crs(taiwan_ts_map_sf)
-      
+
            map <-
              tm_shape(tw_osm)+
              tm_rgb() +
@@ -359,8 +364,8 @@ function(input, output) {
        img_list = append(img_list,image_read(file_n))
        }
     
-       img_list <- image_scale(img_list, "500x500")
-       exp_gif = image_animate(image_scale(img_list, "500x500"), fps = 4, dispose = "previous")
+       img_list <- image_scale(img_list, "900x900")
+       exp_gif = image_animate(image_scale(img_list, "900x900"), fps = 2, dispose = "previous")
        image_write(exp_gif, path = "plots/exp_.gif", format = "gif")
        
        output$sptem_gifplot <- renderImage(
@@ -372,7 +377,7 @@ function(input, output) {
            ))
          }
        )
-       enable("sptem_gen_btn")
+       shinyjs::enable("sptem_gen_btn")
      })
     
 }

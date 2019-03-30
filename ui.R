@@ -100,6 +100,7 @@ navbarPage("Dangy", id="nav",
            ),
            
            tabPanel("Spatial Temporal Analysis",
+                    shinyjs::useShinyjs(),
                     tags$style(HTML(".datepicker {z-index:99999 !important;}")),
                     sidebarLayout(
                       position = "right",
