@@ -137,7 +137,7 @@ navbarPage("Dangy", id="nav",
                       
                       # Show a plot of the generated distribution
                       mainPanel(
-                        textOutput("my_dump")
+                        imageOutput("sptem_gifplot")
                       )
                     )
            ),

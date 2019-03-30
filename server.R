@@ -171,216 +171,209 @@ function(input, output) {
     data
   }))
   #========= Spatial Temporal =========
+
     observeEvent(input$sptem_gen_btn, {
+      disable("sptem_gen_btn")
       
-      # output$imageplot <- renderImage(
-      #   {
-      #     return(list(
-      #       src = "res/load.gif",
-      #       contentType = "image/gif",
-      #       alt = "Now loading!"
-      #     ))
-      #   }
-      # )
-      
-      output$my_dump = renderText({ 
+      output$my_dump = renderText({
         "loading started"
       })
-      
-      printVerbose("Loading started.",output)
       print("Loading started.")
-      
-      date_list= list()
-      list_i = 1
-      
-      if (input$analysis_mode=="1 Year"){
-        printVerbose("'1 Year' Selected",output)
-        print("'1 Year' Selected")
-        for(month in c(1:12)){
-          start_date = as.Date(paste(input$sptem_yearpick,"-",month,"-",1,sep=""))
-          if(month != 12){
-            end_date = as.Date(paste(input$sptem_yearpick,"/",month+1,"/",1,sep="")) - 1
-          }else{
-            end_date = as.Date(paste(start_year,"-",12,"-",31,sep=""))
-          }
-          date_list[[list_i]] = c(paste(start_date),paste(end_date))
-          list_i = list_i+1
-        }
-      }else if(input$analysis_mode=="12 Weeks"){
-        printVerbose("'12 Weeks' Selected",output)
-        print("'12 Weeks' Selected")
-        end_date = as.Date(input$sptem_datepick)
-        for(week in c(1:12)){
-          t_start_date = end_date
-          end_date = t_start_date + 6
-          date_list[[list_i]] = c(paste(t_start_date),paste(end_date))
-          
-          end_date = end_date+1
-          list_i = list_i+1
-        }
-      }else if(input$analysis_mode=="14 Days"){
-        printVerbose("'14 Days' Selected",output)
-        print("'14 Days' Selected")
-        t_start_date = as.Date(input$sptem_datepick)
-        for(day in c(0:13)){
-          date_list[[list_i]] = c(paste(t_start_date+day),paste(t_start_date+day))
-          list_i = list_i+1
-        }
-      }else{
-        print("Fallen.")
-      }
-      
-      printVerbose("Generating OWIN",output)
-      print("Generating OWIN")
-      
-      if(input$sptem_regionpick == "All"){
-        tw_owin <- as(taiwan_ts_map_sp, "owin")
-        tw_bb <- bb(taiwan_ts_map_sp)
-      }else{
-        area_sf = taiwan_ts_map_sf[taiwan_ts_map_sf$TOWNENG==input$sptem_regionpick,]
-        area_sp = as(area_sf,"Spatial")
-        tw_owin <- as(area_sp, "owin")
-        tw_bb <- bb(area_sp)
-      }
-      
-      tw_osm <- read_osm(tw_bb, type="osm")
-      
-      spatpoint_list= list()
-      list_i = 1
-      
-      printVerbose("Extracting datapoints from dates",output)
-      print("Extracting datapoints from dates")
-      
-      for(date_range in date_list){
-        dengue_pt_range = df_dengue2 %>%
-          filter(as.Date(Onset_day) >= date_range[1] & as.Date(Onset_day)<= date_range[2])%>%
-          st_as_sf(coords = c("x","y"),
-                   crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs") %>%
-          as('Spatial') 
-        spatpoint_list[[list_i]] = dengue_pt_range
-        list_i = list_i + 1
-      }
-      ppp_list= list()
-      list_i = 1
-      
-      printVerbose("Converting Spatpoints to PPP",output)
-      print("Converting Spatpoints to PPP")
-      
-      for(spatpoint in spatpoint_list){
-        ppp_range = as(spatpoint_list[[list_i]],"ppp")
-        
-        ppp_list[[list_i]] = ppp_range
-        list_i = list_i + 1
-      }
-      
-      list_i = 1
-      
-      printVerbose("Matching PPP with OWIN",output)
-      print("Matching PPP with OWIN")
-      
-      for(ppp_range in ppp_list){
-        ppp_list[[list_i]] = ppp_list[[list_i]][tw_owin]
-        printVerbose(paste(round(list_i/length(ppp_list)*100,2),"%",sep=""),output)
-        print(paste(round(list_i/length(ppp_list)*100,2),"%",sep=""))
-        list_i = list_i + 1
-      }
-      
-      tmap_mode("plot")
-      
-      if (dir.exists("plots")) {
-        unlink("plots", recursive = TRUE)
-      }
-      dir.create("plots")
-      
-      plot_list = list()
-      
-      list_i = 1
-      
-      printVerbose("Generating Density Maps",output)
-      print("Generating Density Maps")
-      
-      for(ppp_range in ppp_list){
-        t_kde_taiwan_bw <- density(ppp_range, sigma=input$sptem_sigpick, edge=TRUE, kernel=input$sptem_kernelpick)
-        plot_list[[list_i]] = t_kde_taiwan_bw
-        printVerbose(round(list_i/length(ppp_list)*100,2),output)
-        print(round(list_i/length(ppp_list)*100,2))
-        list_i = list_i+1
-      }
+    
+       date_list= list()
+       list_i = 1
+    
+       if (input$analysis_mode=="1 Year"){
+         print("'1 Year' Selected")
+         for(month in c(1:12)){
+           start_date = as.Date(paste(input$sptem_yearpick,"-",month,"-",1,sep=""))
+           if(month != 12){
+             end_date = as.Date(paste(input$sptem_yearpick,"/",month+1,"/",1,sep="")) - 1
+           }else{
+             end_date = as.Date(paste(input$sptem_yearpick,"-",12,"-",31,sep=""))
+           }
+           date_list[[list_i]] = c(paste(start_date),paste(end_date))
+           list_i = list_i+1
+         }
+       }else if(input$analysis_mode=="12 Weeks"){
+         print("'12 Weeks' Selected")
+         end_date = as.Date(input$sptem_datepick)
+         for(week in c(1:12)){
+           t_start_date = end_date
+           end_date = t_start_date + 6
+           date_list[[list_i]] = c(paste(t_start_date),paste(end_date))
+    
+           end_date = end_date+1
+           list_i = list_i+1
+         }
+       }else if(input$analysis_mode=="14 Days"){
+         print("'14 Days' Selected")
+         t_start_date = as.Date(input$sptem_datepick)
+         for(day in c(0:13)){
+           date_list[[list_i]] = c(paste(t_start_date+day),paste(t_start_date+day))
+           list_i = list_i+1
+         }
+       }else{
+         print("Fallen.")
+       }
+    
+       print("Generating OWIN")
+    
+       if(input$sptem_regionpick == "All"){
+         tw_owin <- as(taiwan_ts_map_sp, "owin")
+         tw_bb <- bb(taiwan_ts_map_sp)
+       }else{
+         area_sf = taiwan_ts_map_sf[taiwan_ts_map_sf$TOWNENG==input$sptem_regionpick,]
+         area_sp = as(area_sf,"Spatial")
+         tw_owin <- as(area_sp, "owin")
+         tw_bb <- bb(area_sp)
+       }
+    
+       tw_osm <- read_osm(tw_bb, type="osm")
+    
+       spatpoint_list= list()
+       list_i = 1
+    
+       print("Extracting datapoints from dates")
+    
        
-      tmap_mode("view") 
+       withProgress(message = 'Extracting Datapoints from Dates', value = 0, {
+         for(date_range in date_list){
+           dengue_pt_range = df_dengue2 %>%
+             filter(as.Date(Onset_day) >= date_range[1] & as.Date(Onset_day)<= date_range[2])%>%
+             st_as_sf(coords = c("x","y"),
+                      crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs") %>%
+             as('Spatial')
+           spatpoint_list[[list_i]] = dengue_pt_range
+           list_i = list_i + 1
+           incProgress(1/length(date_list), detail = paste("Extracting data points for plot ", list_i))
+         }
+       })
+       ppp_list= list()
+       list_i = 1
+    
+       print("Converting Spatpoints to PPP")
+    
+       withProgress(message = 'Converting Spatpoints to PPP', value = 0, {
+         for(spatpoint in spatpoint_list){
+           ppp_range = as(spatpoint_list[[list_i]],"ppp")
       
-      min_val= .Machine$integer.max
-      max_val=0
+           ppp_list[[list_i]] = ppp_range
+           
+           list_i = list_i + 1
+           incProgress(1/length(spatpoint_list), detail = paste("Converting spatpoints for plot ", list_i))
+         }
+       })
+    
+       list_i = 1
+    
+       print("Matching PPP with OWIN")
+    
+       withProgress(message = 'Confining PPP with OWIN', value = 0, {
+         for(ppp_range in ppp_list){
+           ppp_list[[list_i]] = ppp_list[[list_i]][tw_owin]
+           print(paste(round(list_i/length(ppp_list)*100,2),"%",sep=""))
+           list_i = list_i + 1
+           incProgress(1/length(ppp_list), detail = paste("Confining points for plot ", list_i))
+         }
+       })
+    
+       tmap_mode("plot")
+    
+       if (dir.exists("plots")) {
+         unlink("plots", recursive = TRUE)
+       }
+       dir.create("plots")
+    
+       plot_list = list()
+    
+       list_i = 1
+    
+       print("Generating Density Maps")
+       withProgress(message = 'Generating Density Maps', value = 0, {
+         for(ppp_range in ppp_list){
+           t_kde_taiwan_bw <- density(ppp_range, sigma=input$sptem_sigpick, edge=TRUE, kernel=input$sptem_kernelpick)
+           plot_list[[list_i]] = t_kde_taiwan_bw
+           print(round(list_i/length(ppp_list)*100,2))
+           list_i = list_i+1
+           incProgress(1/length(ppp_list), detail = paste("Generating KDE map for plot ", list_i))
+           }
+       })    
+       tmap_mode("view")
+    
+       min_val= .Machine$integer.max
+       max_val=0
+    
+       for(plot_a in plot_list){
+         plot_a$v[is.na(plot_a$v)] <- 0
+         if(min(plot_a$v)<min_val){
+           min_val=min(plot_a$v)
+         }
+         if(max(plot_a$v)>max_val){
+           max_val=max(plot_a$v)
+         }
+       }
+    
+       v_range = ceiling(max_val) - floor(min_val)
+       r_interval = ceiling(v_range/input$sptem_binpick)
+       bins = seq(0,r_interval*input$sptem_binpick,r_interval)
+    
+    
+       list_i = 1
+    
+       print("Output to PNG")
+    
+       withProgress(message = 'Output maps to PNG', value = 0, {
+         for(kde_taiwan_bw in plot_list){
+           gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
       
-      for(plot_a in plot_list){
-        plot_a$v[is.na(plot_a$v)] <- 0
-        if(min(plot_a$v)<min_val){
-          min_val=min(plot_a$v)
-        }
-        if(max(plot_a$v)>max_val){
-          max_val=max(plot_a$v)
-        }
-      }
+           kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
       
-      v_range = ceiling(max_val) - floor(min_val)
-      r_interval = ceiling(v_range/input$sptem_binpick)
-      bins = seq(0,r_interval*input$sptem_binpick,r_interval)
+           projection(kde_taiwan_bw_raster) =  crs(taiwan_ts_map_sf)
       
-      
-      list_i = 1
-      
-      printVerbose("Output to PNG",output)
-      print("Output to PNG")
-      
-      for(kde_taiwan_bw in plot_list){
-        gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
-        
-        kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
-        
-        projection(kde_taiwan_bw_raster) =  crs(taiwan_ts_map_sf)
-        
-        map <- 
-          tm_shape(tw_osm)+
-          tm_rgb() +
-          tm_shape(kde_taiwan_bw_raster)+
-          tm_raster("v", alpha = 0.65, style="fixed", breaks=bins )+ 
-          tm_layout(paste("Dengue Outbreak Distribution in",date_list[[list_i]][1], "to", date_list[[list_i]][2]), 
-                    title.size = 1, 
-                    title.position = c("right","top"),
-                    legend.title.size = 1,
-                    legend.text.size = 0.7,
-                    legend.position = c("right","bottom"))
-        tmap_save(map, filename=paste("plots/plot",list_i,".png", sep="" ))
-        printVerbose(paste("PNG frame saved for plot",list_i),output)
-        print(paste("PNG frame saved for plot",list_i))
-        list_i = list_i+1
-      }
-      
-      plot_dir_list = list.files(path = "plots",full.names = TRUE, recursive = TRUE)
-      plot_dir_list = mixedsort(sort(plot_dir_list))
-      
-      img_list = list()
-      list_i = 1
-      
-      for(file_n in plot_dir_list){
-        img_list = append(img_list,image_read(file_n))
-      }
-      
-      img_list <- image_scale(img_list, "500x500")
-      #image_animate(image_scale(img_list, "500x500"), fps = 4, dispose = "previous")
-      
-      output$imageplot <- renderImage(
-        {
-          return (NULL)
-        }
-      )
-      
-      #====output=====#
-      output$my_dump = renderText({ 
-        paste(date_list, collapse=",")
-      })
-      
-    })
+           map <-
+             tm_shape(tw_osm)+
+             tm_rgb() +
+             tm_shape(kde_taiwan_bw_raster)+
+             tm_raster("v", alpha = 0.65, style="fixed", breaks=bins )+
+             tm_layout(paste("Dengue Outbreak Distribution in",date_list[[list_i]][1], "to", date_list[[list_i]][2]),
+                       title.size = 1,
+                       title.position = c("right","top"),
+                       legend.title.size = 1,
+                       legend.text.size = 0.7,
+                       legend.position = c("right","bottom"))
+           tmap_save(map, filename=paste("plots/plot",list_i,".png", sep="" ))
+           print(paste("PNG frame saved for plot",list_i))
+           list_i = list_i+1
+           incProgress(1/length(plot_list), detail = paste("Generating PNG for plot ", list_i))
+         }
+       })
+    
+       plot_dir_list = list.files(path = "plots",full.names = TRUE, recursive = TRUE)
+       plot_dir_list = mixedsort(sort(plot_dir_list))
+    
+       img_list = list()
+       list_i = 1
+    
+     for(file_n in plot_dir_list){
+       img_list = append(img_list,image_read(file_n))
+       }
+    
+       img_list <- image_scale(img_list, "500x500")
+       exp_gif = image_animate(image_scale(img_list, "500x500"), fps = 4, dispose = "previous")
+       image_write(exp_gif, path = "plots/exp_.gif", format = "gif")
+       
+       output$sptem_gifplot <- renderImage(
+         {
+           return(list(
+             src = "plots/exp_.gif",
+             filetype = "image/gif",
+             alt = "spatial temporal gif plot"
+           ))
+         }
+       )
+       enable("sptem_gen_btn")
+     })
     
 }
 

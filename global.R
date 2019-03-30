@@ -17,7 +17,7 @@ Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 #taiwan_ts_map_sf <- st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226")
 #taiwan_ts_map_st <- st_transform(taiwan_ts_map_sf,crs=3826)
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
-
+taiwan_ts_map_sf <- st_as_sf(taiwan_ts_map_sp)
 
 df_dengue.raw <- jsonlite::fromJSON("data/dengue_case.json")
 df_dengue.raw$ID <- seq.int(nrow(df_dengue.raw))
