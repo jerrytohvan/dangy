@@ -1,4 +1,5 @@
-packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"lubridate") 
+packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate") 
+#devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
 
 for (p in packages){
   if(!require(p, character.only = T)){
@@ -14,10 +15,14 @@ for (p in packages){
 
 Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
-#taiwan_ts_map_sf <- st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226")
-#taiwan_ts_map_st <- st_transform(taiwan_ts_map_sf,crs=3826)
+#for sttp
+taiwan <- readShapePoly("data/taiwan_data/COUNTY_MOI_1070516.shp")
+taiwan@proj4string<- CRS( "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
+taiwan.union <- aggregate(taiwan)
+#end sttp
 taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
 taiwan_ts_map_sf <- st_as_sf(taiwan_ts_map_sp)
+
 
 df_dengue.raw <- jsonlite::fromJSON("data/dengue_case.json")
 df_dengue.raw$ID <- seq.int(nrow(df_dengue.raw))
@@ -78,3 +83,4 @@ printVerbose<-function(x,output){
     paste(verbose, collapse=",")
   })
 }
+

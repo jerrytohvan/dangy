@@ -101,10 +101,16 @@ package: lubridate
 ```{r}
 
 #https://medium.com/@yenishrepublic/how-can-i-generate-a-triangular-network-with-r-ce6e20b13221
+  sf_dengue_duplicate <-  sf_dengue[year(sf_dengue@data$Onset_day) == 2016,]
+   
 
-filter_dengue_time <- sf_dengue@data %>%
-  mutate(DAY_ORDER = yday(as.Date(Onset_day)))
-dengue_3d <- as.3dpoints(sf_dengue@coords[,1],sf_dengue@coords[,2],filter_dengue_time$DAY_ORDER)
+    filter_dengue_time <- sf_dengue_duplicate@data %>%
+      mutate(DAY_ORDER = yday(as.Date(Onset_day))) 
+#     
+# filter_dengue_time <- sf_dengue@data %>%
+#   mutate(DAY_ORDER = yday(as.Date(Onset_day)))
+
+dengue_3d <- as.3dpoints(sf_dengue_duplicate@coords[,1],sf_dengue_duplicate@coords[,2],filter_dengue_time$DAY_ORDER)
 
 
 
