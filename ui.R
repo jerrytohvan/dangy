@@ -107,6 +107,10 @@
                         sidebarPanel(
                           width = 3,
                           h3("Parameters"),
+                          selectInput("analysis_mode",
+                                      "Date range by:",
+                                      analysis_mode_options
+                          ),
                           conditionalPanel(
                             condition = "input.analysis_mode == '1 Year'",
                             selectInput("sptem_yearpick",

@@ -181,62 +181,67 @@ function(input, output) {
         return(NULL)
       }
     )
-    
-    output$my_dump = renderText({
-      "loading started"
-    })
-    print("Loading started.")
-    
-    date_list= list()
-    list_i = 1
-    
-    if (input$analysis_mode=="1 Year"){
-      print("'1 Year' Selected")
-      for(month in c(1:12)){
-        start_date = as.Date(paste(input$sptem_yearpick,"-",month,"-",1,sep=""))
-        if(month != 12){
-          end_date = as.Date(paste(input$sptem_yearpick,"/",month+1,"/",1,sep="")) - 1
-        }else{
-          end_date = as.Date(paste(input$sptem_yearpick,"-",12,"-",31,sep=""))
+    withProgress(message = 'Loading has started', value = 0, {
+      output$my_dump = renderText({
+        "loading started"
+      })
+      print("Loading started.")
+      incProgress(0.5, detail ="Processing parameters ")
+      
+      date_list= list()
+      list_i = 1
+      
+      if (input$analysis_mode=="1 Year"){
+        print("'1 Year' Selected")
+        for(month in c(1:12)){
+          start_date = as.Date(paste(input$sptem_yearpick,"-",month,"-",1,sep=""))
+          if(month != 12){
+            end_date = as.Date(paste(input$sptem_yearpick,"/",month+1,"/",1,sep="")) - 1
+          }else{
+            end_date = as.Date(paste(input$sptem_yearpick,"-",12,"-",31,sep=""))
+          }
+          date_list[[list_i]] = c(paste(start_date),paste(end_date))
+          list_i = list_i+1
         }
-        date_list[[list_i]] = c(paste(start_date),paste(end_date))
-        list_i = list_i+1
+      }else if(input$analysis_mode=="12 Weeks"){
+        print("'12 Weeks' Selected")
+        end_date = as.Date(input$sptem_datepick)
+        for(week in c(1:12)){
+          t_start_date = end_date
+          end_date = t_start_date + 6
+          date_list[[list_i]] = c(paste(t_start_date),paste(end_date))
+          
+          end_date = end_date+1
+          list_i = list_i+1
+        }
+      }else if(input$analysis_mode=="14 Days"){
+        print("'14 Days' Selected")
+        t_start_date = as.Date(input$sptem_datepick)
+        for(day in c(0:13)){
+          date_list[[list_i]] = c(paste(t_start_date+day),paste(t_start_date+day))
+          list_i = list_i+1
+        }
+      }else{
+        print("Fallen.")
       }
-    }else if(input$analysis_mode=="12 Weeks"){
-      print("'12 Weeks' Selected")
-      end_date = as.Date(input$sptem_datepick)
-      for(week in c(1:12)){
-        t_start_date = end_date
-        end_date = t_start_date + 6
-        date_list[[list_i]] = c(paste(t_start_date),paste(end_date))
-        
-        end_date = end_date+1
-        list_i = list_i+1
-      }
-    }else if(input$analysis_mode=="14 Days"){
-      print("'14 Days' Selected")
-      t_start_date = as.Date(input$sptem_datepick)
-      for(day in c(0:13)){
-        date_list[[list_i]] = c(paste(t_start_date+day),paste(t_start_date+day))
-        list_i = list_i+1
-      }
-    }else{
-      print("Fallen.")
-    }
+    })
     
     print("Generating OWIN")
-    
-    if(input$sptem_regionpick == "All"){
-      tw_owin <- as(taiwan_ts_map_sp, "owin")
-      tw_bb <- bb(taiwan_ts_map_sp)
-    }else{
-      area_sf = taiwan_ts_map_sf[taiwan_ts_map_sf$TOWNENG==input$sptem_regionpick,]
-      area_sp = as(area_sf,"Spatial")
-      tw_owin <- as(area_sp, "owin")
-      tw_bb <- bb(area_sp)
-    }
-    
-    tw_osm <- read_osm(tw_bb, type="osm")
+    withProgress(message = 'Generating OWIN', value = 0, {
+      incProgress(0.5, detail ="Preparing OWIN with parameters")
+      if(input$sptem_regionpick == "All"){
+        tw_owin <- as(taiwan_ts_map_sp, "owin")
+        tw_bb <- bb(taiwan_ts_map_sp)
+      }else{
+        area_sf = taiwan_ts_map_sf[taiwan_ts_map_sf$GG_NAME==input$sptem_regionpick,]
+        area_sf = na.omit(area_sf)
+        area_sp = as(area_sf,"Spatial")
+        tw_owin <- as(area_sp, "owin")
+        tw_bb <- bb(area_sp)
+      }
+      
+      tw_osm <- read_osm(tw_bb, type="osm")
+    })
     
     spatpoint_list= list()
     list_i = 1

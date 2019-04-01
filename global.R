@@ -1,4 +1,4 @@
-packages = c("rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate") 
+packages = c("xlsx","rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools") 
 #devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
 
 for (p in packages){
@@ -21,6 +21,10 @@ taiwan@proj4string<- CRS( "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
 taiwan.union <- aggregate(taiwan)
 #end sttp
 taiwan_ts_map_sf = st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE,options = "ENCODING=UTF-8")
+county_eng_name <- read.xlsx("data/county_names.xlsx",sheetIndex=1, encoding = "UTF-8")
+taiwan_ts_map_sf = left_join(taiwan_ts_map_sf,county_eng_name[c(1,3)],by=c("COUNTYNAME"="C_NAME"))
+taiwan_ts_map_sf = st_as_sf(taiwan_ts_map_sf,sf_column_name="geometry")
+
 taiwan_ts_map_sp <- as(taiwan_ts_map_sf,"Spatial")
 
 
