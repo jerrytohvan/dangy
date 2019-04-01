@@ -22,6 +22,8 @@ function(input, output) {
   output$dataPoints <- renderLeaflet({
     filter_year <- input$yearSlider 
     
+    print(filter_year)
+    
     # Filter by year 1998
     df_filtered <- df_dengue %>%
       filter(grepl(filter_year, Onset_day))
@@ -30,9 +32,9 @@ function(input, output) {
     sf_dengue <- st_as_sf(df_filtered, 
                           coords = c("Minimum_statistical_area_center_point_X",
                                      "Minimum_statistical_area_center_point_Y"),
-                          crs =  "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs",na.fail=FALSE)
+                          crs =  "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
     
-    sf_dengue <- na.omit(sf_dengue)
+    # sf_dengue <- na.omit(sf_dengue)
     sf_dengue <- as(sf_dengue, 'Spatial')
     
     map_dengue <- 
@@ -395,31 +397,36 @@ function(input, output) {
         return(NULL)
       }
     )
-    
-    output$my_dump = renderText({
-      "loading started"
-    })
-    print("Loading started...")
-    #filter sfdengue here
-    daterange_start <- input$daterange3[1]
-    daterange_end <- input$daterange3[2]
-    # sf_dengue_duplicate <-  sf_dengue[year(sf_dengue@data$Onset_day) == input$sttp_yearpick,]
-    sf_dengue_duplicate <-  sf_dengue[as.Date(sf_dengue@data$Onset_day) >= daterange_start & as.Date(sf_dengue@data$Onset_day) < daterange_end ,]
-    
-    #Validation
-    if(nrow(sf_dengue_duplicate@data)==0){
-      output$validation_text <- renderText({
-        "No dengue cases identified, please select other date."
+    withProgress(message = 'Rendering has started', value = 0, {
+      output$my_dump = renderText({
+        "loading started"
       })
-      return(NULL)
-    }
+      print("Loading started...")
+      #filter sfdengue here
+      daterange_start <- input$daterange3[1]
+      daterange_end <- input$daterange3[2]
+      # sf_dengue_duplicate <-  sf_dengue[year(sf_dengue@data$Onset_day) == input$sttp_yearpick,]
+      sf_dengue_duplicate <-  sf_dengue[as.Date(sf_dengue@data$Onset_day) >= daterange_start & as.Date(sf_dengue@data$Onset_day) < daterange_end ,]
+      
+      incProgress(0.5, detail = "Preparing data")
+      
+      #Validation
+      if(nrow(sf_dengue_duplicate@data)==0){
+        output$validation_text <- renderText({
+          "No dengue cases identified, please select other date."
+        })
+        return(NULL)
+      }
+      
+      filter_dengue_time <- sf_dengue_duplicate@data %>%
+        mutate(DAY_ORDER = yday(as.Date(Onset_day))) 
+  
+      
+      dengue_3d <- as.3dpoints(sf_dengue_duplicate@coords[,1],sf_dengue_duplicate@coords[,2],filter_dengue_time$DAY_ORDER)
+      print("OK")
+      incProgress(1, detail = "Rendering completed")
+    })
     
-    filter_dengue_time <- sf_dengue_duplicate@data %>%
-      mutate(DAY_ORDER = yday(as.Date(Onset_day))) 
-
-    
-    dengue_3d <- as.3dpoints(sf_dengue_duplicate@coords[,1],sf_dengue_duplicate@coords[,2],filter_dengue_time$DAY_ORDER)
-    print("OK")
     
     counter=c()
     max=1
@@ -437,89 +444,109 @@ function(input, output) {
     
     print("Rendering Plots...")
     
-    
-    output$sttp_plot_1 <- renderPlot(
-      {
-        # xy-locations and cumulative distribution of the times
-        plot(dengue_3d,s.region=taiwan_main,col="red",type="projection")
-      }
-    )
-    output$sttp_plot_2 <- renderPlot(
-      {
-        #space-time 3D scatter
-        plot(dengue_3d ,s.region=taiwan_main,col="red",type="scatter" )
-      }
-    )
-    output$sttp_plot_3 <- renderPlot(
-      {
-        #the time-mark and space-mark.
-        plot(dengue_3d,s.region=taiwan_main,type="mark")
-      }
-    )
-    
+    withProgress(message = 'Rendering plots', value = 0, {
+      output$sttp_plot_1 <- renderPlot(
+        {
+          # xy-locations and cumulative distribution of the times
+          plot(dengue_3d,s.region=taiwan_main,col="red",type="projection")
+        }
+      )
+      incProgress(1/3, detail = "Rendering plot 1")
+      output$sttp_plot_2 <- renderPlot(
+        {
+          #space-time 3D scatter
+          plot(dengue_3d ,s.region=taiwan_main,col="red",type="scatter" )
+        }
+      )
+      incProgress(1, detail = "Rendering plot 2")
+      output$sttp_plot_3 <- renderPlot(
+        {
+          #the time-mark and space-mark.
+          plot(dengue_3d,s.region=taiwan_main,type="mark")
+        }
+      )
+      incProgress(1, detail = "Rendering plot 3")
+    })
     
     
     
     print("Preparing Spatial Points Animation...")
-    
-    taiwan_map <- fortify(taiwan)
-    datetime <- as.data.frame(dengue_3d[,3])
-    taiwan_plot <- ggplot(data=taiwan_map, aes(x = long, y = lat, group=group))+
-      geom_path() + 
-      coord_map()
-    dengue_points <- as.data.frame(sf_dengue_duplicate) %>%
-      dplyr::select(Onset_day, coords.x1,coords.x2)
-    
-    dengue_points$Onset_day <- as.Date(dengue_points$Onset_day)
-    dengue_points <- dengue_points%>%
-      mutate(months=as.numeric(format(Onset_day, "%m")))
-    date_dengue <- as.data.frame(as.Date(dengue_points$Onset_day))
-    date_dengue$coords.x1 <- 120.2900
-    date_dengue$coords.x2 <- 22.68133
-    colnames(date_dengue) <- c("start_date","coords.x1","coords.x2")
-    start_date <- date_dengue[1,]
-    
-    date_dengue<-date_dengue[!(date_dengue$start_date==start_date$start_date),]
-    date_dengue<-unique(date_dengue)
+    withProgress(message = 'Preparing Spatial Points Animation', value = 0, {
+      taiwan_map <- fortify(taiwan)
+      
+      incProgress(0.2, detail = "Converting data")
+      
+      datetime <- as.data.frame(dengue_3d[,3])
+      taiwan_plot <- ggplot(data=taiwan_map, aes(x = long, y = lat, group=group))+
+        geom_path() + 
+        coord_map()
+      
+      incProgress(0.5, detail = "Creating plot")
+      
+      dengue_points <- as.data.frame(sf_dengue_duplicate) %>%
+        dplyr::select(Onset_day, coords.x1,coords.x2)
+      
+      dengue_points$Onset_day <- as.Date(dengue_points$Onset_day)
+      dengue_points <- dengue_points%>%
+        mutate(months=as.numeric(format(Onset_day, "%m")))
+      date_dengue <- as.data.frame(as.Date(dengue_points$Onset_day))
+      date_dengue$coords.x1 <- 120.2900
+      date_dengue$coords.x2 <- 22.68133
+      colnames(date_dengue) <- c("start_date","coords.x1","coords.x2")
+      start_date <- date_dengue[1,]
+      
+      date_dengue<-date_dengue[!(date_dengue$start_date==start_date$start_date),]
+      date_dengue<-unique(date_dengue)
+    })
     
     print("Preparing map layers...")
+    withProgress(message = 'Preparing map layers', value = 0, {
+      incProgress(0.5, detail = "Preparing...")
+      map <-taiwan_plot+
+        geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day,cumulative=TRUE),  data = dengue_points,  colour = 'red', alpha = .2, inherit.aes = FALSE)+
+        geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day),  data = dengue_points,  colour = 'red', alpha = .5, inherit.aes = FALSE)+
+        geom_point(aes(x = coords.x1, y = coords.x2, # this is the init transparent frame
+                       frame = start_date,
+                       cumulative = TRUE),
+                   data = start_date, alpha = 0, inherit.aes = FALSE) +
+        geom_point(aes(x = coords.x1, y = coords.x2, # this is the final transparent frames
+                       frame = start_date,
+                       cumulative = TRUE),
+                   data = date_dengue, alpha = 0, inherit.aes = FALSE) +
+        # Here comes the gganimate specific bits
+        labs(title = 'Day: ') 
+    })
     
-    map <-taiwan_plot+
-      geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day,cumulative=TRUE),  data = dengue_points,  colour = 'red', alpha = .2, inherit.aes = FALSE)+
-      geom_point(mapping = aes(x = coords.x1, y = coords.x2, frame=Onset_day),  data = dengue_points,  colour = 'red', alpha = .5, inherit.aes = FALSE)+
-      geom_point(aes(x = coords.x1, y = coords.x2, # this is the init transparent frame
-                     frame = start_date,
-                     cumulative = TRUE),
-                 data = start_date, alpha = 0, inherit.aes = FALSE) +
-      geom_point(aes(x = coords.x1, y = coords.x2, # this is the final transparent frames
-                     frame = start_date,
-                     cumulative = TRUE),
-                 data = date_dengue, alpha = 0, inherit.aes = FALSE) +
-      # Here comes the gganimate specific bits
-      labs(title = 'Day: ') 
+    
     
     print("Creating animation...")
-    
-    if (dir.exists("plots")) {
-      unlink("plots", recursive = TRUE)
-    }
-    dir.create("plots")
-    animated_points <- gganimate(map, interval = .2, "plots/year-datapoints.gif")
-    
-
-    print("OK")
-    
+    withProgress(message = 'Creating animation', value = 0, {
+      incProgress(0.2, detail = "Clearing cache")
+      if (dir.exists("plots")) {
+        unlink("plots", recursive = TRUE)
+      }
+      dir.create("plots")
+      incProgress(0.5, detail = "Generating animation")
+      animated_points <- gganimate(map, interval = .2, "plots/year-datapoints.gif")
+      
+  
+      print("OK")
+    })
     
     print("Rendering Dengue Spread Patterns...")
-    output$sttp_gifplot <- renderImage(
-      {
-        return(list(
-          src = "plots/year-datapoints.gif",
-          filetype = "image/gif",
-          alt = "dengue points spread trend gif plot"
-        ))
-      }
-    )
+    withProgress(message = 'Rendering Dengue Spread Patters', value = 0, {
+      
+      incProgress(0.5, detail = "Almost done")
+      output$sttp_gifplot <- renderImage(
+        {
+          return(list(
+            src = "plots/year-datapoints.gif",
+            filetype = "image/gif",
+            alt = "dengue points spread trend gif plot"
+          ))
+        }
+      )
+    })
     shinyjs::enable("sttp_gen_btn")
   })
 }

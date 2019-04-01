@@ -13,15 +13,15 @@ for (p in packages){
 #                           secret='vr4aq0OamiPwv5VOslTXsAJyJlpqRdaAT+Df8Mum')
 # rsconnect::deployApp(server="shinyapps.io")
 
-Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+Sys.setlocale("LC_CTYPE", "Chinese")
 
 #for sttp
 taiwan <- readShapePoly("data/taiwan_data/COUNTY_MOI_1070516.shp")
 taiwan@proj4string<- CRS( "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs")
 taiwan.union <- aggregate(taiwan)
 #end sttp
-taiwan_ts_map_sp <- readOGR(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE)
-taiwan_ts_map_sf <- st_as_sf(taiwan_ts_map_sp)
+taiwan_ts_map_sf = st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE,options = "ENCODING=UTF-8")
+taiwan_ts_map_sp <- as(taiwan_ts_map_sf,"Spatial")
 
 
 df_dengue.raw <- jsonlite::fromJSON("data/dengue_case.json")
@@ -48,16 +48,15 @@ sf_dengue <- st_as_sf(df_dengue,
                                  "Minimum_statistical_area_center_point_Y"),
                       crs =  "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs",na.fail=FALSE)
 
-sf_dengue <- na.omit(sf_dengue)
-sf_dengue <- as(sf_dengue, 'Spatial')
+sp_dengue <- as(sf_dengue, 'Spatial')
 
 tmap_mode('view')
 
-projection(taiwan_ts_map_sp) <- sf_dengue@proj4string
+projection(taiwan_ts_map_sp) <- sp_dengue@proj4string
 taiwan_ts_map_sp@data$poly.ids <- 1:nrow(taiwan_ts_map_sp)
 
 #join poly and points
-pts.poly <- point.in.poly(sf_dengue, taiwan_ts_map_sp)
+pts.poly <- point.in.poly(sp_dengue, taiwan_ts_map_sp)
 
 #assign unique id per poly, full info
 
