@@ -14,7 +14,8 @@ my_packages = c("devtools","colorspace","xlsx","rsconnect","rjson","DT","sp","sf
 install_if_missing = function(p) {
   if (p %in% rownames(installed.packages()) == FALSE) {
     if(p == "gganimate"){
-      install.packages("./gganimate-0.1.1.zip", repos = NULL, type="source")
+      install.packages("gganimate/gganimate")
+      # install.packages("./gganimate-0.1.1.zip", repos = NULL, type="source")
     }else{
       install.packages(p, dependencies = TRUE)
       }
