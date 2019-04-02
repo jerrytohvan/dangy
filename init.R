@@ -17,7 +17,7 @@ install_if_missing = function(p) {
       install.packages("./gganimate-0.1.1.zip", repos = NULL, type="source")
     }else{
       install.packages(p, dependencies = TRUE)
-      }
+    }
   }
   else {
     cat(paste("Skipping already installed package:", p, "\n"))
