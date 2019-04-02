@@ -1,5 +1,4 @@
-packages = c("xlsx","rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools") 
-#devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
+packages = c("devtools","colorspace","xlsx","rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools") 
 
 for (p in packages){
   if(!require(p, character.only = T)){
@@ -7,6 +6,8 @@ for (p in packages){
   } 
   library(p,character.only = T) 
 }
+#devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
+
 
 # rsconnect::setAccountInfo(name='dangy',
 #                           token='B9D18F7AF49EB8DB4EFA8EEEC1682918',

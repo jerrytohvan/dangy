@@ -391,7 +391,7 @@ function(input, output) {
   #========= STTP Temporal =========
   
   observeEvent(input$sttp_gen_btn, {
-    shinyjs::disable("sttp_gen_btn")
+    shinyjs::disable("sttp_gen_btn") 
     output$sttp_plot <- renderPlot(
       {
         return(NULL)
@@ -402,7 +402,7 @@ function(input, output) {
         return(NULL)
       }
     )
-    withProgress(message = 'Rendering has started', value = 0, {
+  
       output$my_dump = renderText({
         "loading started"
       })
@@ -410,29 +410,28 @@ function(input, output) {
       #filter sfdengue here
       daterange_start <- input$daterange3[1]
       daterange_end <- input$daterange3[2]
-      # sf_dengue_duplicate <-  sf_dengue[year(sf_dengue@data$Onset_day) == input$sttp_yearpick,]
-      sf_dengue_duplicate <-  sf_dengue[as.Date(sf_dengue@data$Onset_day) >= daterange_start & as.Date(sf_dengue@data$Onset_day) < daterange_end ,]
+      sf_dengue_duplicate <- sp_dengue[as.Date(sp_dengue@data$Onset_day) >= daterange_start & as.Date(sp_dengue@data$Onset_day) < daterange_end ,]
       
-      incProgress(0.5, detail = "Preparing data")
       
       #Validation
       if(nrow(sf_dengue_duplicate@data)==0){
         output$validation_text <- renderText({
-          "No dengue cases identified, please select other date."
+          "No dengue cases identified, please select other dates."
         })
+        shinyjs::enable("sttp_gen_btn")
+        return(NULL)
+      }else if(nrow(sf_dengue_duplicate@data)==1){
+        output$validation_text <- renderText({
+          "Dengue spread analysis requires more than one case, you may reconfigure the date range inputs."
+        })
+        shinyjs::enable("sttp_gen_btn")
         return(NULL)
       }
       
       filter_dengue_time <- sf_dengue_duplicate@data %>%
         mutate(DAY_ORDER = yday(as.Date(Onset_day))) 
-  
-      
       dengue_3d <- as.3dpoints(sf_dengue_duplicate@coords[,1],sf_dengue_duplicate@coords[,2],filter_dengue_time$DAY_ORDER)
-      print("OK")
-      incProgress(1, detail = "Rendering completed")
-    })
-    
-    
+
     counter=c()
     max=1
     prev=1
@@ -480,9 +479,18 @@ function(input, output) {
       taiwan_map <- fortify(taiwan)
       
       incProgress(0.2, detail = "Converting data")
-      
-      datetime <- as.data.frame(dengue_3d[,3])
-      taiwan_plot <- ggplot(data=taiwan_map, aes(x = long, y = lat, group=group))+
+
+      #BUG - Catch error for 1 point result
+
+      if(nrow(filter_dengue_time)==1){
+        print("in")
+        datetime <- as.data.frame(dengue_3d[3])
+      }else{
+        print("out")
+        datetime <- as.data.frame(dengue_3d[,3])
+      }
+
+            taiwan_plot <- ggplot(data=taiwan_map, aes(x = long, y = lat, group=group))+
         geom_path() + 
         coord_map()
       
@@ -494,6 +502,7 @@ function(input, output) {
       dengue_points$Onset_day <- as.Date(dengue_points$Onset_day)
       dengue_points <- dengue_points%>%
         mutate(months=as.numeric(format(Onset_day, "%m")))
+      print(dengue_points)
       date_dengue <- as.data.frame(as.Date(dengue_points$Onset_day))
       date_dengue$coords.x1 <- 120.2900
       date_dengue$coords.x2 <- 22.68133
@@ -551,6 +560,10 @@ function(input, output) {
           ))
         }
       )
+    })
+    
+    output$validation_text <- renderText({
+      ""
     })
     shinyjs::enable("sttp_gen_btn")
   })

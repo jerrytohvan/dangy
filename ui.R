@@ -143,12 +143,14 @@
                       )
              ),
              tabPanel("Dengue Spread Analysis",
+                      fluidPage(
                       shinyjs::useShinyjs(),
                       tags$style(HTML(".datepicker {z-index:99999 !important;}")),
                       sidebarLayout(
                         position = "right",
                         sidebarPanel(
-                          width = 3,
+                          width = 4
+                          ,
                           h3("Parameters"),
                           dateRangeInput("daterange3", "Date range:",
                                          start  = min_date,
@@ -163,12 +165,28 @@
                         # Show a plot of the generated distribution
                         mainPanel(
                           textOutput("validation_text"),
-                          imageOutput("sttp_gifplot"),
-                          plotOutput("sttp_plot_1"),
-                          plotOutput("sttp_plot_2"),
-                          plotOutput("sttp_plot_3")
-                        
+                          fluidRow(
+                            column(6,
+                                   imageOutput("sttp_gifplot")
+                            ),
+                            column(4,
+                                   plotOutput("sttp_plot_2")
+                            )
+                                 
+                                   
+            
+                          ),fluidRow(
+                            column(6,
+                                   plotOutput("sttp_plot_1")
+                            ),
+                            column(6,
+                                   plotOutput("sttp_plot_3")
+                            )
+                            
+                          )
+
                         )
+                      )
                       )
              ),
              tabPanel("Data Table",
