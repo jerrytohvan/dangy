@@ -1,17 +1,17 @@
-# packages = c("devtools","colorspace","xlsx","rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools")
-# 
-# for (p in packages){
-#   if(!require(p, character.only = T)){
-#     if(p == "gganimate"){
-#       devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
-#       
-#       #install.packages("./gganimate-0.1.1.zip", repos = NULL, type="source")
-#     }else{
-#       install.packages(p)
-#     }
-#   }
-#   library(p,character.only = T)
-# }
+packages = c("devtools","colorspace","xlsx","rsconnect","rjson","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools")
+ 
+for (p in packages){
+  if(!require(p, character.only = T)){
+     if(p == "gganimate"){
+       devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
+       
+       #install.packages("./gganimate-0.1.1.zip", repos = NULL, type="source")
+     }else{
+       install.packages(p)
+     }
+   }
+   library(p,character.only = T)
+}
 
 #devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
 
