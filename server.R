@@ -340,12 +340,7 @@ function(input, output,session) {
     
     withProgress(message = 'Extracting Datapoints from Dates', value = 0, {
       for(date_range in date_list){
-        dengue_pt_range = df_dengue2 %>%
-          filter(as.Date(Onset_day) >= date_range[1] & as.Date(Onset_day)<= date_range[2])%>%
-          st_as_sf(coords = c("x","y"),
-                   crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs") %>%
-          as('Spatial')
-   
+          dengue_pt_range = dengue_pt_range_fil%>%
         spatpoint_list[[list_i]] = dengue_pt_range
         list_i = list_i + 1
         incProgress(1/length(date_list), detail = paste("Extracting data points for plot ", list_i))
@@ -358,8 +353,11 @@ function(input, output,session) {
     
     withProgress(message = 'Converting Spatpoints to PPP', value = 0, {
       for(spatpoint in spatpoint_list){
-        ppp_range = as(spatpoint_list[[list_i]],"ppp")
-        
+        if(is.null(spatpoint_list[[list_i]])){
+          ppp_range = NULL
+        }else{
+          ppp_range = as(spatpoint_list[[list_i]],"ppp")
+        }
         ppp_list[[list_i]] = ppp_range
         
         list_i = list_i + 1
@@ -373,7 +371,9 @@ function(input, output,session) {
     
     withProgress(message = 'Confining PPP with OWIN', value = 0, {
       for(ppp_range in ppp_list){
-        ppp_list[[list_i]] = ppp_list[[list_i]][tw_owin]
+        if(!is.null(ppp_range)){
+          ppp_list[[list_i]] = ppp_list[[list_i]][tw_owin]
+        }
         print(paste(round(list_i/length(ppp_list)*100,2),"%",sep=""))
         list_i = list_i + 1
         incProgress(1/length(ppp_list), detail = paste("Confining points for plot ", list_i))
@@ -394,7 +394,11 @@ function(input, output,session) {
     print("Generating Density Maps")
     withProgress(message = 'Generating Density Maps', value = 0, {
       for(ppp_range in ppp_list){
-        t_kde_taiwan_bw <- density(ppp_range, sigma=input$sptem_sigpick, edge=TRUE, kernel=input$sptem_kernelpick)
+        if(is.null(ppp_range)){
+          t_kde_taiwan_bw = NULL
+        }else{
+          t_kde_taiwan_bw <- density(ppp_range, sigma=input$sptem_sigpick, edge=TRUE, kernel=input$sptem_kernelpick)
+        }
         plot_list[[list_i]] = t_kde_taiwan_bw
         print(round(list_i/length(ppp_list)*100,2))
         list_i = list_i+1
@@ -407,12 +411,14 @@ function(input, output,session) {
     max_val=0
     
     for(plot_a in plot_list){
-      plot_a$v[is.na(plot_a$v)] <- 0
-      if(min(plot_a$v)<min_val){
-        min_val=min(plot_a$v)
-      }
-      if(max(plot_a$v)>max_val){
-        max_val=max(plot_a$v)
+      if(!is.null(plot_a)){
+        plot_a$v[is.na(plot_a$v)] <- 0
+        if(min(plot_a$v)<min_val){
+          min_val=min(plot_a$v)
+        }
+        if(max(plot_a$v)>max_val){
+          max_val=max(plot_a$v)
+        }
       }
     }
     
@@ -420,30 +426,42 @@ function(input, output,session) {
     r_interval = ceiling(v_range/input$sptem_binpick)
     bins = seq(0,r_interval*input$sptem_binpick,r_interval)
     
+    print(length(spatpoint_list))
+    print(length(ppp_list))
+    print(length(plot_list))
     
     list_i = 1
     
     print("Output to PNG")
-    
     withProgress(message = 'Output maps to PNG', value = 0, {
       for(kde_taiwan_bw in plot_list){
-        gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
+        if(is.null(kde_taiwan_bw)){
+          map <-
+            tm_shape(tw_osm)+
+            tm_raster() +
+            tm_layout(paste("Dengue Outbreak Distribution in",date_list[[list_i]][1], "to", date_list[[list_i]][2]),
+                      title.size = 1,
+                      title.position = c("right","top"))
+        }else{
+          gridded_kde_taiwan_bw<- as.SpatialGridDataFrame.im(kde_taiwan_bw)
+          
+          kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
+          
+          projection(kde_taiwan_bw_raster) =  crs(taiwan_ts_map_sf)
+          
+          map <-
+            tm_shape(tw_osm)+
+            tm_rgb() +
+            tm_shape(kde_taiwan_bw_raster)+
+            tm_raster("v", alpha = 0.65, style="fixed", breaks=bins )+
+            tm_layout(paste("Dengue Outbreak Distribution in",date_list[[list_i]][1], "to", date_list[[list_i]][2]),
+                      title.size = 1,
+                      title.position = c("right","top"),
+                      legend.title.size = 1,
+                      legend.text.size = 0.7,
+                      legend.position = c("right","bottom"))
+        }
         
-        kde_taiwan_bw_raster <- raster(gridded_kde_taiwan_bw)
-        
-        projection(kde_taiwan_bw_raster) =  crs(taiwan_ts_map_sf)
-        
-        map <-
-          tm_shape(tw_osm)+
-          tm_rgb() +
-          tm_shape(kde_taiwan_bw_raster)+
-          tm_raster("v", alpha = 0.65, style="fixed", breaks=bins )+
-          tm_layout(paste("Dengue Outbreak Distribution in",date_list[[list_i]][1], "to", date_list[[list_i]][2]),
-                    title.size = 1,
-                    title.position = c("right","top"),
-                    legend.title.size = 1,
-                    legend.text.size = 0.7,
-                    legend.position = c("right","bottom"))
         tmap_save(map, filename=paste("plots/plot",list_i,".png", sep="" ))
         print(paste("PNG frame saved for plot",list_i))
         list_i = list_i+1
