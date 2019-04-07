@@ -64,10 +64,23 @@
                                    #            min = 1998,
                                    #            max = 2018,
                                    #            value = c(1998,1999)),
-                                   selectInput("yearSlider", "Years:", selected = 1998,
-                                               c(1998,1999,2000,2001,2002,2003,2004,
-                                                 2005,2006,2007,2008,2009,2010,2011,
-                                                 2012,2013,2014,2015,2016,2017,2018)),
+                                   selectInput("analysis_mode2",
+                                               "Date range by:",
+                                               c("-","1 Year","12 Weeks","14 Days"), 
+                                               selected = '-'
+                                   ),
+                                   conditionalPanel(
+                                     condition = "input.analysis_mode2 == '1 Year'",
+                                     selectInput("sptem_yearpick2",
+                                                 h5("Select year:"),
+                                                 years_options, 
+                                                 selected = 1998
+                                     )
+                                   ),
+                                   conditionalPanel(
+                                     condition = "input.analysis_mode2 == '12 Weeks' | input.analysis_mode2 == '14 Days'",
+                                     dateInput("sptem_datepick2", label = h5("Select start date:"),format = "dd/mm/yyyy", value = start_date, min=min_date, max= max_date)
+                                   ),
                                    selectInput("filters", "Attributes:", selected = "age_group",
                                                c("Age" = "age_group",
                                                  "Gender" = "gender",
@@ -77,7 +90,8 @@
                                   #plotlyOutput(outputId = "timeplot", height = 350)
                                   bsCollapse(id = "collapseExample", open = "Case Count over Years",
                                              bsCollapsePanel("Case Count over Years", plotlyOutput(outputId = "mainplot", height = 350), style = "info"),
-                                             bsCollapsePanel("Cases Count per Month", plotlyOutput(outputId = "timeplot", height = 350), style = "info"),
+                                             bsCollapsePanel("Cases Count per Month", plotlyOutput(outputId = "monthplot", height = 350), style = "info"),
+                                             bsCollapsePanel("Cases Count per Week", plotlyOutput(outputId = "weekplot", height = 350), style = "info"),
                                              bsCollapsePanel("Distribution of Attributes", plotlyOutput(outputId = "barplot", height = 350), style = "success")
                                   )
                                   
