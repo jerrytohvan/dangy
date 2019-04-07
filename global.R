@@ -1,5 +1,5 @@
 
-packages = c("colorspace","DT","jsonlite", "leaflet","ggplot2","dplyr", "raster",  "shinyjs", 'tmaptools', 'magick', 'purrr',"gganimate","gtools")
+library("shiny")
 library("sp")
 library("sf")
 library("tidyverse")
@@ -7,7 +7,7 @@ library("GISTools")
 library("OpenStreetMap")
 library("maps")
 library("ggmap")
-library("pryr")
+# library("pryr")
 
 packages = c("DT","jsonlite", "leaflet", "raster",  "shinyjs")
 
@@ -102,7 +102,7 @@ infected_countries_aggregate <-pts.poly@data %>%
 verbose =c()
 printVerbose<-function(x,output){
   verbose = append(verbose,paste("\n",x,sep=""))
-  output$my_dump = renderText({ 
+  output$my_dump = renderText({
     paste(verbose, collapse=",")
   })
 }
