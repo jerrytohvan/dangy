@@ -19,10 +19,37 @@ function(input, output,session) {
     tmap_leaflet(map)
   })
   
+
   sf_dengue_map <-  reactive({
-    filter_year <- input$yearSlider 
+    # Check options for data filters
+    date_list= list()
+    
+    if (input$analysis_mode2=="1 Year" || input$analysis_mode2=="-"){
+      print("'1 Year' Selected")
+      print(input$sptem_yearpick2)
+      start_date = as.Date(paste(input$sptem_yearpick2,"-",1,"-",1,sep=""))
+      end_date = as.Date(paste(input$sptem_yearpick2,"/",12,"/",31,sep="")) 
+      date_list = c(paste(start_date),paste(end_date))
+      
+    }else if(input$analysis_mode2=="12 Weeks"){
+      print("'12 Weeks' Selected")
+      t_start_date = as.Date(input$sptem_datepick2)
+      end_date = t_start_date + 83
+      date_list = c(paste(t_start_date),paste(end_date))
+      
+    }else if(input$analysis_mode2=="14 Days"){
+      print("'14 Days' Selected")
+      t_start_date = as.Date(input$sptem_datepick2)
+      date_list = c(paste(t_start_date),paste(t_start_date+13))
+      
+    }else{
+      date_list = c("01/01/1998", "01/01/1999")
+    }
+    
+    # Filter by year 1998
+    
     df_filtered <- df_dengue %>%
-      filter(grepl(filter_year, Onset_day))
+      filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
     
     # Transform into SF object
     sf_dengue <- st_as_sf(df_filtered, 
@@ -41,6 +68,9 @@ function(input, output,session) {
               border.col = "black",
               border.lwd = 1) 
     tmap_leaflet(map_dengue)
+})
+      output$dataPoints <- renderLeaflet({
+        sf_dengue_map()
   })
   
   output$dataPoints <- renderLeaflet({
@@ -60,18 +90,36 @@ function(input, output,session) {
       geom_bar(stat= "identity", fill = "#0073C2FF") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       labs(y = "Number of cases", x = "Year")
+ 
   })
   
   # ===========  Feature 3 - Distribution Plot  =============
   
   output$barplot <- renderPlotly({
-    filter_year <- input$yearSlider 
+    if (input$analysis_mode2=="1 Year" || input$analysis_mode2=="-"){
+      print("'1 Year' Selected")
+      print(input$sptem_yearpick2)
+      start_date = as.Date(paste(input$sptem_yearpick2,"-",1,"-",1,sep=""))
+      end_date = as.Date(paste(input$sptem_yearpick2,"/",12,"/",31,sep="")) 
+      date_list = c(paste(start_date),paste(end_date))
+      
+    }else if(input$analysis_mode2=="12 Weeks"){
+      print("'12 Weeks' Selected")
+      t_start_date = as.Date(input$sptem_datepick2)
+      end_date = t_start_date + 83
+      date_list = c(paste(t_start_date),paste(end_date))
+ 
+      
+    }else if(input$analysis_mode2=="14 Days"){
+      print("'14 Days' Selected")
+      t_start_date = as.Date(input$sptem_datepick2)
+      date_list = c(paste(t_start_date),paste(t_start_date+13))
+
+    }
     
-    # Filter by year 1998
     df_filtered <- df_dengue %>%
-      filter(grepl(filter_year, Onset_day))
-    
-    
+      filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+
     # Rearrange the x axis for age-group
     if (input$filters == "age_group") {
       agg_age <- df_filtered %>% 
@@ -109,11 +157,16 @@ function(input, output,session) {
     }
   })
   # ===========  Feature 5 - Cases over Time Plot  =============
-  output$timeplot <- renderPlotly({
-    filter_year <- input$yearSlider 
+  output$monthplot <- renderPlotly({
+    print("Plotting counts over months")
+    print(input$sptem_yearpick2)
+    start_date = as.Date(paste(input$sptem_yearpick2,"-",1,"-",1,sep=""))
+    end_date = as.Date(paste(input$sptem_yearpick2,"/",12,"/",31,sep="")) 
+    date_list = c(paste(start_date),paste(end_date))
+    print(date_list)
     
     df_filtered <- df_dengue %>%
-      filter(grepl(filter_year, Onset_day))
+      filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
     
     agg_date <- df_filtered %>% 
       dplyr::mutate(Onset_Month = format(Onset_day, "%m")) %>%
@@ -126,6 +179,53 @@ function(input, output,session) {
       labs(y = "Number of cases", x = "Month")
     
  
+  })
+  
+  output$weekplot <- renderPlotly({
+    
+    if(input$analysis_mode2=="12 Weeks"){
+      print("'12 Weeks' Selected")
+      t_start_date = as.Date(input$sptem_datepick2)
+      end_date = t_start_date + 83
+      date_list = c(paste(t_start_date),paste(end_date))
+      print(date_list)
+      
+      df_filtered <- df_dengue %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      
+      df_filtered$weeks <- cut(df_filtered[,"Onset_day"], breaks="week")
+      
+      agg_date <- df_filtered %>% 
+        group_by(weeks) %>% 
+        summarise(total_cases = n())
+      
+      ggplot(agg_date, aes(y = total_cases, x = weeks)) +
+        geom_bar(stat= "identity", fill = "#0073C2FF") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        labs(y = "Number of cases", x = "Weeks")
+      
+    }else if(input$analysis_mode2=="14 Days"){
+      print("'14 Days' Selected")
+      t_start_date = as.Date(input$sptem_datepick2)
+      date_list = c(paste(t_start_date),paste(t_start_date+13))
+      print(date_list)
+      
+      df_filtered <- df_dengue %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      
+      df_filtered$weeks <- cut(df_filtered[,"Onset_day"], breaks="week")
+      
+      agg_date <- df_filtered %>% 
+        group_by(weeks) %>% 
+        summarise(total_cases = n())
+      
+      ggplot(agg_date, aes(y = total_cases, x = weeks)) +
+        geom_bar(stat= "identity", fill = "#0073C2FF") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        labs(y = "Number of cases", x = "Weeks")
+    }
+ 
+   
   })
   
   observeEvent(input$add, {
