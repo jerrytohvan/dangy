@@ -1,7 +1,7 @@
 # Define server logic required to draw a histogram
 
 
-function(input, output) {
+function(input, output,session) {
   output$distPlot <- renderPlot({
     # generate bins based on input$bins from ui.R
     x    <- faithful[, 2] 
@@ -19,12 +19,8 @@ function(input, output) {
     tmap_leaflet(map)
   })
   
-  output$dataPoints <- renderLeaflet({
+  sf_dengue_map <-  reactive({
     filter_year <- input$yearSlider 
-    
-    print(filter_year)
-    
-    # Filter by year 1998
     df_filtered <- df_dengue %>%
       filter(grepl(filter_year, Onset_day))
     
@@ -45,7 +41,11 @@ function(input, output) {
               border.col = "black",
               border.lwd = 1) 
     tmap_leaflet(map_dengue)
-    
+  })
+  
+  output$dataPoints <- renderLeaflet({
+  
+    sf_dengue_map()
   })
   
   # ===========  Feature 2 - Distribution of Cases over Years Plot  =============
@@ -112,7 +112,6 @@ function(input, output) {
   output$timeplot <- renderPlotly({
     filter_year <- input$yearSlider 
     
-    # Filter by year 1998
     df_filtered <- df_dengue %>%
       filter(grepl(filter_year, Onset_day))
     
@@ -126,19 +125,7 @@ function(input, output) {
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       labs(y = "Number of cases", x = "Month")
     
-    #ggplot(data = agg_date) +
-    #  geom_line(aes(x = Onset_day, y = total_cases), 
-    #            color = "#09557f",
-    #            alpha = 0.6,
-    #            size = 0.6) +
-    #  labs(x = "Date", 
-    #       y = "Cases",
-    #       title = "Case Count over Months") +
-    #  scale_x_date(
-    #    labels = date_format("%Y-%m"),
-    #    breaks = "1 month") +
-    #  theme_minimal() +
-    #  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ 
   })
   
   observeEvent(input$add, {
@@ -230,9 +217,11 @@ function(input, output) {
     withProgress(message = 'Generating OWIN', value = 0, {
       incProgress(0.5, detail ="Preparing OWIN with parameters")
       if(input$sptem_regionpick == "All"){
+       
         tw_owin <- as(taiwan_ts_map_sp, "owin")
         tw_bb <- bb(taiwan_ts_map_sp)
       }else{
+       
         area_sf = taiwan_ts_map_sf[taiwan_ts_map_sf$GG_NAME==input$sptem_regionpick,]
         area_sf = na.omit(area_sf)
         area_sp = as(area_sf,"Spatial")
@@ -256,6 +245,7 @@ function(input, output) {
           st_as_sf(coords = c("x","y"),
                    crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs") %>%
           as('Spatial')
+   
         spatpoint_list[[list_i]] = dengue_pt_range
         list_i = list_i + 1
         incProgress(1/length(date_list), detail = paste("Extracting data points for plot ", list_i))
@@ -567,5 +557,6 @@ function(input, output) {
     })
     shinyjs::enable("sttp_gen_btn")
   })
+  pryr::mem_used()
 }
 

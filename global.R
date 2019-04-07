@@ -1,54 +1,36 @@
-# packages = c("shiny","colorspace","tcltk","dplyr", "DT","sp", "ggplot2","maps","leaflet","tidyverse","jsonlite", "rgdal","raster","lubridate","ggmap","gganimate","gtools",'tmaptools', 'magick', 'purrr')
-# # 
-# for (p in packages){
-#     library(p,character.only = T)
-# }
 
-
-# packages = c("devtools","colorspace","openxlsx","rsconnect","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools")
-# 
-# for (p in packages){
-#   if(!require(p, character.only = T)){
-#     if(p == "gganimate"){
-#       devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1")
-# 
-#       #install.packages("./gganimate-0.1.1.zip", repos = NULL, type="source")
-#     }else{
-#       install.packages(p)
-#     }
-#   }
-#   library(p,character.only = T)
-# }
-
-   #  
-#https://cran.r-project.org/src/contrib/Archive/rpanel/
-
-#try wihtout: scales, jsonlite, knitr,tmaptools,"gtools","scales",
-packages = c("colorspace","DT","jsonlite", "leaflet","ggplot2","dplyr", "raster",  "shinyjs", 'tmaptools', 'magick', 'purrr',"gganimate")
-
-for (p in packages){
-  require(p,character.only = T)
-}
+library("shiny")
 library("sp")
 library("sf")
 library("tidyverse")
-library("geojsonio")
 library("GISTools")
 library("OpenStreetMap")
 library("maps")
 library("ggmap")
+library("pryr")
+
+packages = c("DT","jsonlite", "leaflet", "raster",  "shinyjs")
+
+for (p in packages){
+  require(p,character.only = T)
+}
+require("tmap")
 require("rgdal")
 require("rgeos")
 require("openxlsx")
-require("tmap")
 require("spatialEco")
 require("lubridate")
 require("plotly")
-require("knitr")
 require("stpp")
-require("shiny")
 require("shinyBS")
-# 
+
+require("mapproj")
+require("maptools")
+require("gganimate")
+require("gtools")
+
+#https://cran.r-project.org/src/contrib/Archive/rpanel/
+
 # Sys.setlocale("LC_CTYPE", "Chinese")
 
 #for sttp
@@ -60,6 +42,7 @@ taiwan.union <- aggregate(taiwan)
 taiwan_ts_map_sf = st_read(dsn = "data/TAIWAN_TOWNSHIP", layer = "TOWN_MOI_1071226", stringsAsFactors=TRUE,options = "ENCODING=UTF-8")
 county_eng_name <- read.xlsx("data/county_names.xlsx",sheet=1)
 taiwan_ts_map_sf = left_join(taiwan_ts_map_sf,county_eng_name[c(1,3)],by=c("COUNTYNAME"="C_NAME"))
+taiwan_ts_map_sf$GG_NAME[is.na(taiwan_ts_map_sf$GG_NAME)] <- as.character(taiwan_ts_map_sf$TOWNENG[is.na(taiwan_ts_map_sf$GG_NAME)])
 taiwan_ts_map_sf = st_as_sf(taiwan_ts_map_sf,sf_column_name="geometry")
 
 taiwan_ts_map_sp <- as(taiwan_ts_map_sf,"Spatial")
@@ -78,13 +61,11 @@ df_dengue.raw[, "Notification_day"] <- as.Date(df_dengue.raw$Notification_day, "
 
 df_dengue<- df_dengue.raw[!is.na(df_dengue.raw$Minimum_statistical_area_center_point_X),]
 df_dengue<- df_dengue[!(df_dengue$Minimum_statistical_area_center_point_X == 'None'),]
-
-df_dengue2 = df_dengue
 df_dengue2 = df_dengue[,-c(2:9,12:25)]
 df_dengue2 = rename(df_dengue, x = Minimum_statistical_area_center_point_X, y = Minimum_statistical_area_center_point_Y)
 
 # Transform into SF object
-sf_dengue <- st_as_sf(df_dengue, 
+sf_dengue <- st_as_sf(df_dengue,
                       coords = c("Minimum_statistical_area_center_point_X",
                                  "Minimum_statistical_area_center_point_Y"),
                       crs =  "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs",na.fail=FALSE)
@@ -104,15 +85,15 @@ pts.poly <- point.in.poly(sp_dengue, taiwan_ts_map_sp)
 #descendng order of town with most
 #FILTER: Months, Gender
 #DISPLAY: COUNTY, GENDER, TOWNID, TOWNNAME, TOWNENG, total_cases, ....
-selected_aggregated_temp <-pts.poly@data %>% 
-  dplyr::select(poly.ids, TOWNNAME, TOWNENG, Onset_day, Case_study_date, Notification_day) %>% 
+selected_aggregated_temp <-pts.poly@data %>%
+  dplyr::select(poly.ids, TOWNNAME, TOWNENG, Onset_day, Case_study_date, Notification_day) %>%
   mutate(MONTH = months(as.Date(pts.poly@data$Onset_day))) %>%
   mutate(YEAR = year(as.Date(pts.poly@data$Onset_day))) %>%
-  group_by(TOWNNAME, TOWNENG,MONTH,YEAR) %>% 
+  group_by(TOWNNAME, TOWNENG,MONTH,YEAR) %>%
   summarise(total_cases = n())
 
-infected_countries_aggregate <-pts.poly@data %>% 
-  dplyr::select(Onset_day, Infected_country, Infected_counties_and_cities, Infected_village)%>% 
+infected_countries_aggregate <-pts.poly@data %>%
+  dplyr::select(Onset_day, Infected_country, Infected_counties_and_cities, Infected_village)%>%
   mutate(MONTH = months(as.Date(pts.poly@data$Onset_day))) %>%
   mutate(YEAR = year(as.Date(pts.poly@data$Onset_day))) %>%
   group_by( MONTH, YEAR,Infected_country, Infected_counties_and_cities, Infected_village) %>% summarise(total_cases = n())
@@ -121,7 +102,7 @@ infected_countries_aggregate <-pts.poly@data %>%
 verbose =c()
 printVerbose<-function(x,output){
   verbose = append(verbose,paste("\n",x,sep=""))
-  output$my_dump = renderText({ 
+  output$my_dump = renderText({
     paste(verbose, collapse=",")
   })
 }

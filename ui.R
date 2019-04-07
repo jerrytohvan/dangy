@@ -4,7 +4,7 @@
   start_date = min_date
   years_options = year(df_dengue2$Onset_day) %>% unique
   kernel_options = c("gaussian","rectangular","triangular","epanechnikov","biweight","cosine","optcosine")
-  region_options = c("All",sf_dengue$Living_county)
+  region_options = c("All",taiwan_ts_map_sf$GG_NAME)
   break_bin = 10
   start_sigma = 0.5
   
