@@ -28,6 +28,8 @@ require("mapproj")
 require("maptools")
 require("gganimate")
 require("gtools")
+require("magick")
+require("tmaptools")
 
 #https://cran.r-project.org/src/contrib/Archive/rpanel/
 

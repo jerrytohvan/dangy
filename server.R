@@ -349,7 +349,7 @@ function(input, output,session) {
                      crs = "+init=epsg:3826 +proj=longlat +ellps=WGS84 +no_defs") %>%
             as('Spatial')
         }else{
-          dengue_pt_range = NULL
+          dengue_pt_range = "No points"
         }
         spatpoint_list[[list_i]] = dengue_pt_range
         list_i = list_i + 1
@@ -363,14 +363,14 @@ function(input, output,session) {
     
     withProgress(message = 'Converting Spatpoints to PPP', value = 0, {
       for(spatpoint in spatpoint_list){
-        if(!is.null(spatpoint)){
+        if(!is.character(spatpoint)){
           
           
           ppp_range = as(spatpoint_list[[list_i]],"ppp")
           
           
         }else{
-          ppp_range = NULL
+          ppp_range = "No points"
         }
         ppp_list[[list_i]] = ppp_range
         list_i = list_i + 1
@@ -382,10 +382,14 @@ function(input, output,session) {
     
     print("Matching PPP with OWIN")
     
+    ppp_list2 = list()
+    
     withProgress(message = 'Confining PPP with OWIN', value = 0, {
       for(ppp_range in ppp_list){
-        if(!is.null(ppp_range)){
-          ppp_list[[list_i]] = ppp_list[[list_i]][tw_owin]
+        if(!is.character(ppp_range)){
+          ppp_list2[[list_i]] = ppp_range[tw_owin]
+        }else{
+          ppp_list2[[list_i]] = "No points"
         }
         print(paste(round(list_i/length(ppp_list)*100,2),"%",sep=""))
         list_i = list_i + 1
@@ -395,10 +399,14 @@ function(input, output,session) {
     
     tmap_mode("plot")
     
-    if (dir.exists("plots")) {
-      unlink("plots", recursive = TRUE)
+    if (!dir.exists("plots")) {
+      dir.create("plots")
+    }else{
+      if(dir.exists("plots/temp")){
+        unlink("plots/temp", recursive = TRUE)
+      }
     }
-    dir.create("plots")
+    dir.create("plots/temp")
     
     plot_list = list()
     
@@ -406,30 +414,38 @@ function(input, output,session) {
     
     print("Generating Density Maps")
     withProgress(message = 'Generating Density Maps', value = 0, {
-      for(ppp_range in ppp_list){
-        if(is.null(ppp_range)){
-          t_kde_taiwan_bw <- NULL
+      for(ppp_range in ppp_list2){
+        if(is.character(ppp_range)){
+          t_kde_taiwan_bw <- "No points"
         }else{
-          t_kde_taiwan_bw <- density(ppp_range, sigma=input$sptem_sigpick, edge=TRUE, kernel=input$sptem_kernelpick)
+          if(length(ppp_range$x)<1){
+            t_kde_taiwan_bw <- "No points"
+          }else{
+            t_kde_taiwan_bw <- density(ppp_range, sigma=input$sptem_sigpick, edge=TRUE, kernel=input$sptem_kernelpick)
+          }
         }
         plot_list[[list_i]] = t_kde_taiwan_bw
-        print(round(list_i/length(ppp_list)*100,2))
+        print(round(list_i/length(ppp_list2)*100,2))
         list_i = list_i+1
-        incProgress(1/length(ppp_list), detail = paste("Generating KDE map for plot ", list_i))
+        incProgress(1/length(ppp_list2), detail = paste("Generating KDE map for plot ", list_i))
       }
     })
     tmap_mode("view")
     
     min_val= .Machine$integer.max
     max_val=0
+
+    plot_list2 = plot_list
     
     for(plot_a in plot_list){
-      plot_a$v[is.na(plot_a$v)] <- 0
-      if(min(plot_a$v)<min_val){
-        min_val=min(plot_a$v)
-      }
-      if(max(plot_a$v)>max_val){
-        max_val=max(plot_a$v)
+      if(!is.character(plot_a)){
+        plot_a$v[is.na(plot_a$v)] <- 0
+        if(min(plot_a$v)<min_val){
+          min_val=min(plot_a$v)
+        }
+        if(max(plot_a$v)>max_val){
+          max_val=max(plot_a$v)
+        }
       }
     }
     
@@ -437,14 +453,13 @@ function(input, output,session) {
     r_interval = ceiling(v_range/input$sptem_binpick)
     bins = seq(0,r_interval*input$sptem_binpick,r_interval)
     
-    
     list_i = 1
     
     print("Output to PNG")
     
     withProgress(message = 'Output maps to PNG', value = 0, {
-      for(kde_taiwan_bw in plot_list){
-        if(is.null(kde_taiwan_bw)){
+      for(kde_taiwan_bw in plot_list2){
+        if(is.character(kde_taiwan_bw)){
           map <-
             tm_shape(tw_osm)+
             tm_raster() +
@@ -471,14 +486,14 @@ function(input, output,session) {
                       legend.text.size = 0.7,
                       legend.position = c("right","bottom"))
         }
-        tmap_save(map, filename=paste("plots/plot",list_i,".png", sep="" ))
+        tmap_save(map, filename=paste("plots/temp/plot",list_i,".png", sep="" ))
         print(paste("PNG frame saved for plot",list_i))
         list_i = list_i+1
         incProgress(1/length(plot_list), detail = paste("Generating PNG for plot ", list_i))
       }
     })
     
-    plot_dir_list = list.files(path = "plots",full.names = TRUE, recursive = TRUE)
+    plot_dir_list = list.files(path = "plots/temp",full.names = TRUE, recursive = TRUE)
     plot_dir_list = mixedsort(sort(plot_dir_list))
     
     img_list = list()
@@ -499,7 +514,7 @@ function(input, output,session) {
           filetype = "image/gif",
           alt = "spatial temporal gif plot"
         ))
-      }
+      },deleteFile = FALSE
     )
     shinyjs::enable("sptem_gen_btn")
   })
@@ -653,14 +668,16 @@ function(input, output,session) {
     print("Creating animation...")
     withProgress(message = 'Creating animation', value = 0, {
       incProgress(0.2, detail = "Clearing cache")
-      if (dir.exists("plots")) {
-        unlink("plots", recursive = TRUE)
+      if(!dir.exists("plots")){
+        dir.create("plots")
+      }else{
+        if (file.exists("plots/year-datapoints.gif")) {
+          unlink("plots/year-datapoints.gif", recursive = TRUE)
+        }
       }
-      dir.create("plots")
+      
       incProgress(0.5, detail = "Generating animation")
       animated_points <- gganimate(map, interval = .2, "plots/year-datapoints.gif")
-      
-  
       print("OK")
     })
     
