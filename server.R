@@ -47,9 +47,16 @@ function(input, output,session) {
     }
     
     # Filter by year 1998
-    
-    df_filtered <- df_dengue %>%
-      filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    print(input$demographic)
+    if (input$demographic == "All"){
+      df_filtered <- df_dengue %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    } else {
+      print("hi")
+      df_filtered <- df_dengue %>%
+        filter(Infected_country == input$demographic) %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    }
     
     # Transform into SF object
     sf_dengue <- st_as_sf(df_filtered, 
@@ -117,9 +124,16 @@ function(input, output,session) {
 
     }
     
-    df_filtered <- df_dengue %>%
-      filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
-
+    print(input$demographic)
+    if (input$demographic == "All"){
+      df_filtered <- df_dengue %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    } else {
+      print("hi")
+      df_filtered <- df_dengue %>%
+        filter(Infected_country == input$demographic) %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    }
     # Rearrange the x axis for age-group
     if (input$filters == "age_group") {
       agg_age <- df_filtered %>% 
@@ -165,8 +179,16 @@ function(input, output,session) {
     date_list = c(paste(start_date),paste(end_date))
     print(date_list)
     
-    df_filtered <- df_dengue %>%
-      filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    print(input$demographic)
+    if (input$demographic == "All"){
+      df_filtered <- df_dengue %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    } else {
+      print("hi")
+      df_filtered <- df_dengue %>%
+        filter(Infected_country == input$demographic) %>%
+        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+    }
     
     agg_date <- df_filtered %>% 
       dplyr::mutate(Onset_Month = format(Onset_day, "%m")) %>%
@@ -190,8 +212,16 @@ function(input, output,session) {
       date_list = c(paste(t_start_date),paste(end_date))
       print(date_list)
       
-      df_filtered <- df_dengue %>%
-        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      print(input$demographic)
+      if (input$demographic == "All"){
+        df_filtered <- df_dengue %>%
+          filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      } else {
+        print("hi")
+        df_filtered <- df_dengue %>%
+          filter(Infected_country == input$demographic) %>%
+          filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      }
       
       df_filtered$weeks <- cut(df_filtered[,"Onset_day"], breaks="week")
       
@@ -210,9 +240,16 @@ function(input, output,session) {
       date_list = c(paste(t_start_date),paste(t_start_date+13))
       print(date_list)
       
-      df_filtered <- df_dengue %>%
-        filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
-      
+      print(input$demographic)
+      if (input$demographic == "All"){
+        df_filtered <- df_dengue %>%
+          filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      } else {
+        print("hi")
+        df_filtered <- df_dengue %>%
+          filter(Infected_country == input$demographic) %>%
+          filter(as.Date(Onset_day) >= date_list[1] & as.Date(Onset_day)<= date_list[2])
+      }
       df_filtered$weeks <- cut(df_filtered[,"Onset_day"], breaks="week")
       
       agg_date <- df_filtered %>% 

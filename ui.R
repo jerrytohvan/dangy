@@ -3,6 +3,7 @@
   max_date = max(df_dengue2$Onset_day)
   start_date = min_date
   years_options = year(df_dengue2$Onset_day) %>% unique
+  country_options = df_dengue2$Infected_country %>% unique
   kernel_options = c("gaussian","rectangular","triangular","epanechnikov","biweight","cosine","optcosine")
   region_options = c("All",taiwan_ts_map_sf$GG_NAME)
   break_bin = 10
@@ -85,6 +86,9 @@
                                                c("Age" = "age_group",
                                                  "Gender" = "gender",
                                                  "Subzone" = "Living_county")),
+                                   selectInput("demographic", "Nationality:",
+                                               c("All", country_options),
+                                               selected = "All"),
                                   #plotlyOutput(outputId = "barplot", height = 350)
                                   #plotlyOutput(outputId = "mainplot", height = 350)
                                   #plotlyOutput(outputId = "timeplot", height = 350)
