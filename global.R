@@ -5,6 +5,7 @@ for (p in packages){
   if(!require(p, character.only = T)){
     if(p == "gganimate"){
       #select Update NONE when prompted
+      install.packages("animation", dep=TRUE,force=TRUE)
       devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1",dep = FALSE)
     }else{
       install.packages(p)
