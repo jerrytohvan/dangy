@@ -1,37 +1,18 @@
-
-library("shiny")
-library("sp")
-library("sf")
-library("tidyverse")
-library("GISTools")
-library("OpenStreetMap")
-library("maps")
-library("ggmap")
-# library("pryr")
-
-packages = c("DT","jsonlite", "leaflet", "raster",  "shinyjs")
-
+#remove gganimate current version to older version (resolving bug error)
+remove.packages("gganimate")
+packages = c("devtools","colorspace","openxlsx","rsconnect","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools")
 for (p in packages){
-  require(p,character.only = T)
+  if(!require(p, character.only = T)){
+    if(p == "gganimate"){
+      #select Update NONE when prompted
+      devtools::install_github("dgrtwo/gganimate", ref = "v0.1.1",dep = FALSE)
+    }else{
+      install.packages(p)
+    }
+  }
+  library(p,character.only = T)
 }
-require("tmap")
-require("rgdal")
-require("rgeos")
-require("openxlsx")
-require("spatialEco")
-require("lubridate")
-require("plotly")
-require("stpp")
-require("shinyBS")
 
-require("mapproj")
-require("maptools")
-require("gganimate")
-require("gtools")
-require("magick")
-require("tmaptools")
-
-#https://cran.r-project.org/src/contrib/Archive/rpanel/
 
 # Sys.setlocale("LC_CTYPE", "Chinese")
 
