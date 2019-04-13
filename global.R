@@ -1,6 +1,6 @@
 #remove gganimate current version to older version (resolving bug error)
 remove.packages("gganimate")
-packages = c("devtools","colorspace","openxlsx","rsconnect","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools")
+packages = c("devtools","colorspace","openxlsx","rsconnect","DT","sp","sf","tidyverse","tmap","jsonlite","geojsonio", "rgdal", "leaflet","shiny","ggplot2","dplyr", "raster","spatialEco","GISTools", "plotly", "scales", "shinyjs", "shinyBS", "OpenStreetMap",'tmaptools', 'magick', 'purrr',"stpp","lubridate","maps","ggmap","gganimate","gtools", "animation")
 for (p in packages){
   if(!require(p, character.only = T)){
     if(p == "gganimate"){
